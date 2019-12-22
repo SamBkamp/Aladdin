@@ -12,7 +12,7 @@ int twitchsock;
 void login(){
   //inital login to twitch irc servers
   char buff[1000];
-  char payload[100] = "PASS oauth:n7g340l7nz7txpvr8tgj6y2rkhzyhv\r\nNICK BotBkamp\r\n";
+  char payload[100] = "PASS oauth:YOURAUTHHERE\r\nNICK BotBkamp\r\n";
 
   if(write(twitchsock, payload, strlen(payload)) == -1){
     printf("failed to write to socket \n");
