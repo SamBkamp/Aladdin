@@ -52,7 +52,6 @@ void writerTHEThread(void* context){
   if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
     perror("failed to write to socket");
    
-    return NULL;
   }
   
 }
@@ -91,11 +90,8 @@ int main(){
    
    if(write(twitchsock, payload, strlen(payload)) == -1){
      printf("failed to write to socket \n");
-     return NULL;
    }
    
-   printf("-------------------------------LOGIN-------------------------------\n");
-   fflush(stdout);
    
    read(twitchsock, buff, sizeof(buff));
    printf("%s", buff);
@@ -106,7 +102,7 @@ int main(){
    
    if(write(twitchsock, payload, strlen(payload)) == -1){
      printf("failed to write to socket \n");
-     return NULL;
+     exit(0);
    }
    
    bzero(buff, sizeof(buff));
