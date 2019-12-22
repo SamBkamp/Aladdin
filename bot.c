@@ -10,6 +10,10 @@
 struct sockaddr_in twitchaddr;
 int twitchsock;
 
+struct connectionData{
+  int sockfd;
+};
+
 char* scanfuck(){ //gets char* of 'infinite' length | TODO: make a cap, because you could crash a system with a 9gb string. Could literally use fgets()
   int len_max = 10;
   int current_size = len_max;
@@ -42,11 +46,12 @@ void readerTHEThread(){
   }
 }
 
-void writerThread(void* context){
-  const char* payload;
-  strcpy(payload, "PRIVMSG #bkamp_ :botbkamp is here! HeyGuys\r\n");
-  if(write(twitchsock, payload, strlen(payload)) == -1){
-    printf("failed to write to socket \n");
+void writerTHEThread(void* context){
+  struct connectionData *connectionData = context;
+  const char* payload = "PRIVMSG #bkamp_ :botbkamp is here! HeyGuys\r\n";
+  if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
+    perror("failed to write to socket");
+   
     return NULL;
   }
   
@@ -55,6 +60,7 @@ void writerThread(void* context){
 
 
 int main(){
+  struct connectionData connectionData;
   twitchsock = socket(AF_INET, SOCK_STREAM, 0);
   if(twitchsock == -1){
     printf("couldn't connect to socket");
@@ -73,7 +79,7 @@ int main(){
   twitchaddr.sin_family = AF_INET;
   twitchaddr.sin_addr.s_addr = *(long *)host->h_addr_list[0];
   twitchaddr.sin_port = htons(6667);
-  
+  connectionData.sockfd = twitchsock;
    if (connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0) {
     printf("-----[failed to connect to server]-----\n");
     exit(0);
@@ -112,10 +118,10 @@ int main(){
    pthread_t writerThread;
    pthread_t readerThread;
    
-   //pthread_create(&writerThread, NULL, writerThread, (void *) NULL);
+   pthread_create(&writerThread, NULL, writerTHEThread, (void *) &connectionData);
    pthread_create(&readerThread, NULL, readerTHEThread, NULL);
    
-   //pthread_join(writerThread, NULL);
+   pthread_join(writerThread, NULL);
    pthread_join(readerThread, NULL);
 
    
