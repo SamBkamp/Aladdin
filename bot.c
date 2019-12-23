@@ -28,6 +28,10 @@ void joinChannel(char* message){
   sprintf(current, "%s", message);
 }
 
+char* analyseInput(){
+  
+}
+
 char* scanfuck(){ //gets char* of 'infinite' length | TODO: make a cap, because you could crash a system with a 9gb string. Could literally use fgets()
   int len_max = 10;
   int current_size = len_max;
@@ -62,11 +66,14 @@ void readerTHEThread(void* context){
       char* payload = "PONG :tmi.twitch.tv\r\n";
       if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
 	perror("failed to write to socket");
+	return;
       }
     }else {
-      printf("%s", buff);
+      printf("\r%s", buff);
+      sleep(0.5);
+      printf("[%s]> ", current);
+      fflush(stdout);
     }
-    //printf(">\n");
   }
   
   printf("closing writer thread\n");
@@ -77,9 +84,19 @@ void writerTHEThread(void* context){
   const char* payload = "PRIVMSG #bkamp_ :botbkamp is here! HeyGuys\r\n";
   if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
     perror("failed to write to socket");
-   
+    
   }
-  
+  for (;;){
+    printf("[%s]> ", current);
+    fflush(stdout);
+    char* message = scanfuck();
+    char* payload[100];
+    //sprintf(payload, "PRIVMSG %s :%s\r\n", current, message);
+    /*if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
+      perror("failed to write to socket"); 
+    }
+    free(message);*/
+  }
 }
 
 
@@ -144,6 +161,7 @@ int main(){
    pthread_create(&readerThread, NULL, readerTHEThread, (void *) &connectionData);
    
    pthread_join(writerThread, NULL);
+   sleep(1);
    pthread_join(readerThread, NULL);
 
    
