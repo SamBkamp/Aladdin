@@ -39,13 +39,24 @@ char* scanfuck(){ //gets char* of 'infinite' length | TODO: make a cap, because 
 }
 
 
-void readerTHEThread(){
+void readerTHEThread(void* context){
+  struct connectionData* connectionData = context;
   char buff[1024];
   for (;;){
     bzero(buff, sizeof(buff));
     read(twitchsock, buff, sizeof(buff));
-    printf("%s", buff);
+    
+    if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
+      char* payload = "PONG :tmi.twitch.tv\r\n";
+      if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
+	perror("failed to write to socket");
+      }
+    }else {
+      printf("%s", buff);
+    }
   }
+  
+  printf("closing writer thread\n");
 }
 
 void writerTHEThread(void* context){
@@ -74,7 +85,6 @@ int main(){
     exit(0);
 
   }
- 
   //setup addresses
   bzero(&twitchaddr, sizeof(twitchaddr));
   twitchaddr.sin_family = AF_INET;
@@ -122,7 +132,7 @@ int main(){
    pthread_t readerThread;
    
    pthread_create(&writerThread, NULL, writerTHEThread, (void *) &connectionData);
-   pthread_create(&readerThread, NULL, readerTHEThread, NULL);
+   pthread_create(&readerThread, NULL, readerTHEThread, (void *) &connectionData);
    
    pthread_join(writerThread, NULL);
    pthread_join(readerThread, NULL);
