@@ -6,6 +6,8 @@
 #include <string.h> //strtok
 #include <errno.h>
 #include <pthread.h>
+#include "userinput.h" //username and password
+
 
 struct sockaddr_in twitchaddr;
 int twitchsock;
@@ -86,7 +88,12 @@ int main(){
   
   //inital login to twitch irc servers
    char buff[1000];
-   char payload[100] = "PASS oauth:n7g340l7nz7txpvr8tgj6y2rkhzyhv\r\nNICK BotBkamp\r\n";
+   char payload[100] = "PASS ";
+   //this entire strcat section will be changed when get config files/db implemented
+   strcat(payload, password);
+   strcat(payload, "\r\nNICK ");
+   strcat(payload, nick);
+   strcat(payload, "\r\n");
    
    if(write(twitchsock, payload, strlen(payload)) == -1){
      printf("failed to write to socket \n");
