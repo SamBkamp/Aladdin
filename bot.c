@@ -11,10 +11,22 @@
 
 struct sockaddr_in twitchaddr;
 int twitchsock;
+char* current[100];
 
 struct connectionData{
   int sockfd;
 };
+
+void joinChannel(char* message){
+  char* payload[50];
+  sprintf(payload, "JOIN %s\r\n", message);
+  
+  if(write(twitchsock, payload, strlen(payload)) == -1){
+    printf("failed to write to socket \n");
+    return;
+  }
+  sprintf(current, "%s", message);
+}
 
 char* scanfuck(){ //gets char* of 'infinite' length | TODO: make a cap, because you could crash a system with a 9gb string. Could literally use fgets()
   int len_max = 10;
@@ -54,6 +66,7 @@ void readerTHEThread(void* context){
     }else {
       printf("%s", buff);
     }
+    //printf(">\n");
   }
   
   printf("closing writer thread\n");
@@ -115,12 +128,8 @@ int main(){
    //TODO 1: move the next two writes to their own function
    //lets move the JOIN command to its own function so streamer can change on the go and lets move the
    //hello message as the first write in the writer thread
-   strcpy(payload, "JOIN #bkamp_\r\n");
    
-   if(write(twitchsock, payload, strlen(payload)) == -1){
-     printf("failed to write to socket \n");
-     exit(0);
-   }
+   joinChannel("#bkamp_");
    
    bzero(buff, sizeof(buff));
    
