@@ -33,7 +33,7 @@ char* analyseInput(char* strinput){
   char command[10];
   char body[100];
   int i;
-  for(i=0; strinput[i] != ' ' && i < strlen(strinput)-1; i++){
+  for(i=0; strinput[i] != ' '  && i < strlen(strinput); i++){
     char buff[10] = "";
     buff[strlen(buff)] = strinput[i];
     buff[strlen(buff)+1] = '\0';
