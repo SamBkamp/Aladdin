@@ -11,14 +11,14 @@
 
 struct sockaddr_in twitchaddr;
 int twitchsock;
-char* current[100];
+char current[100];
 
 struct connectionData{
   int sockfd;
 };
 
 void joinChannel(char* message){
-  char* payload[50];
+  char payload[50];
   sprintf(payload, "JOIN %s\r\n", message);
   
   if(write(twitchsock, payload, strlen(payload)) == -1){
@@ -28,10 +28,38 @@ void joinChannel(char* message){
   sprintf(current, "%s", message);
 }
 
-char* analyseInput(){
+//I hate this entire function
+char* analyseInput(char* strinput){
+  char command[10];
+  char body[100];
+  int i;
+  for(i=0; strinput[i] != ' ' && i < strlen(strinput)-1; i++){
+    char buff[10] = "";
+    buff[strlen(buff)] = strinput[i];
+    buff[strlen(buff)+1] = '\0';
+    strcat(command, buff);
+    bzero(buff, sizeof(buff));
+  }
+  //I hate this loop
+  for(int j=i; j < strlen(strinput); j++){
+    char buff[10] = "";
+    buff[strlen(buff)] = strinput[j];
+    buff[strlen(buff)+1] = '\0';
+    strcat(body, buff);
+    bzero(buff, sizeof(buff));
+  }
   
+  if(strcmp(command, "say")==0){
+    char buuf[50];
+    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, body); 
+    char* addr = malloc(50);
+    memcpy(addr, &buuf, sizeof(buuf));
+    return addr;
+  }
+  return NULL;
 }
 
+//TODO: move this method to header file
 char* scanfuck(){ //gets char* of 'infinite' length | TODO: make a cap, because you could crash a system with a 9gb string. Could literally use fgets()
   int len_max = 10;
   int current_size = len_max;
@@ -90,12 +118,16 @@ void writerTHEThread(void* context){
     printf("[%s]> ", current);
     fflush(stdout);
     char* message = scanfuck();
-    char* payload[100];
-    //sprintf(payload, "PRIVMSG %s :%s\r\n", current, message);
-    /*if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
-      perror("failed to write to socket"); 
+    char* payload = analyseInput(message);
+    if(payload == NULL){
+      printf("unrecognised command\n");
+    }else {
+      if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
+	perror("failed to write to socket\n"); 
+      }
+      free(message);
     }
-    free(message);*/
+    free(payload);
   }
 }
 
