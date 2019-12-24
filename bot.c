@@ -61,7 +61,7 @@ char* analyseInput(char* strinput){
 
 
 
-void readerTHEThread(void* context){
+void* readerTHEThread(void* context){
   struct connectionData* connectionData = context;
   char buff[1024];
   for (;;){
@@ -72,7 +72,6 @@ void readerTHEThread(void* context){
       char* payload = "PONG :tmi.twitch.tv\r\n";
       if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
 	perror("failed to write to socket");
-	return;
       }
     }else {
       printf("\r%s", buff);
@@ -85,12 +84,11 @@ void readerTHEThread(void* context){
   printf("closing writer thread\n");
 }
 
-void writerTHEThread(void* context){
+void* writerTHEThread(void* context){
   struct connectionData *connectionData = context;
   const char* payload = "PRIVMSG #bkamp_ :botbkamp is here! HeyGuys\r\n";
   if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
     perror("failed to write to socket");
-    
   }
   for (;;){
     printf("[%s]> ", current);
@@ -152,10 +150,7 @@ int main(){
    
    read(twitchsock, buff, sizeof(buff));
    printf("%s", buff);
-   //TODO 1: move the next two writes to their own function
-   //lets move the JOIN command to its own function so streamer can change on the go and lets move the
-   //hello message as the first write in the writer thread
-   
+
    joinChannel("#bkamp_");
    
    bzero(buff, sizeof(buff));
