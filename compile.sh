@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gcc bot.c -o Aladdin -lpthread
+gcc bot.c -Wall -o Aladdin -lpthread
