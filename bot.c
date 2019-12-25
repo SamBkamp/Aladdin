@@ -16,15 +16,18 @@ char current[100];
 struct connectionData{
   int sockfd;
 };
+//TODO 20: move sendMsg to headerfile
+void sendMsg(char* payload){
+  if(write(twitchsock, payload, strlen(payload)) == -1){
+	perror("failed to write to socket\n"); 
+      }
+}
 
+//TODO 20: move joinChannels to headerfile
 void joinChannel(char* message){
   char payload[50];
   sprintf(payload, "JOIN %s\r\n", message);
-  
-  if(write(twitchsock, payload, strlen(payload)) == -1){
-    printf("failed to write to socket \n");
-    return;
-  }
+  sendMsg(payload); 
   sprintf(current, "%s", message);
 }
 
@@ -62,7 +65,6 @@ char* analyseInput(char* strinput){
 
 
 void* readerTHEThread(void* context){
-  struct connectionData* connectionData = context;
   char buff[1024];
   for (;;){
     bzero(buff, sizeof(buff));
@@ -70,9 +72,7 @@ void* readerTHEThread(void* context){
     
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
       char* payload = "PONG :tmi.twitch.tv\r\n";
-      if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
-	perror("failed to write to socket");
-      }
+      sendMsg(payload);
     }else {
       printf("\r%s", buff);
       sleep(0.5);
@@ -85,11 +85,9 @@ void* readerTHEThread(void* context){
 }
 
 void* writerTHEThread(void* context){
-  struct connectionData *connectionData = context;
-  const char* payload = "PRIVMSG #bkamp_ :botbkamp is here! HeyGuys\r\n";
-  if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
-    perror("failed to write to socket");
-  }
+  char payload[50];
+  sprintf(payload,"PRIVMSG %s :botbkamp is here! HeyGuys\r\n", current);
+  sendMsg(payload);
   for (;;){
     printf("[%s]> ", current);
     fflush(stdout);
@@ -98,9 +96,7 @@ void* writerTHEThread(void* context){
     if(payload == NULL){
       printf("unrecognised command\n");
     }else {
-      if(write(connectionData->sockfd, payload, strlen(payload)) == -1){
-	perror("failed to write to socket\n"); 
-      }
+      sendMsg(payload);
       free(message);
     }
     free(payload);
@@ -138,6 +134,7 @@ int main(){
    char buff[1000];
    char payload[100] = "PASS ";
    //this entire strcat section will be changed when get config files/db implemented
+   //TODO 17: change this to sprintf lmao
    strcat(payload, password);
    strcat(payload, "\r\nNICK ");
    strcat(payload, nick);
