@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include "userinput.h" //username and password
 #include "scanfuck.h"
+#include <signal.h>
 
 struct sockaddr_in twitchaddr;
 int twitchsock;
@@ -17,13 +18,19 @@ char current[100];
 
 struct connectionData{
   int sockfd;
+  pthread_t writerThread;
+  pthread_t readerThread;
 };
+
+struct connectionData *connData;
 
 //I hate this entire function
 char* analyseInput(char* strinput){
   char command[10];
   char body[100];
   int i;
+
+  //gets the first 'word' of the input 
   for(i=0; strinput[i] != ' '  && i < strlen(strinput); i++){
     char buff[10] = "";
     buff[strlen(buff)] = strinput[i];
@@ -46,6 +53,9 @@ char* analyseInput(char* strinput){
     char* addr = malloc(50);
     memcpy(addr, &buuf, sizeof(buuf));
     return addr;
+  }else if (strcmp(command, "quit")==0){
+    pthread_kill(connData->writerThread, SIGINT);
+    pthread_kill(connData->readerThread, SIGINT);
   }
   return NULL;
 }
@@ -54,6 +64,7 @@ char* analyseInput(char* strinput){
 
 void* readerTHEThread(void* context){
   char buff[1024];
+  
   for (;;){
     bzero(buff, sizeof(buff));
     read(twitchsock, buff, sizeof(buff));
@@ -74,6 +85,7 @@ void* readerTHEThread(void* context){
 
 void* writerTHEThread(void* context){
   char payload[50];
+  
   sprintf(payload,"PRIVMSG %s :botbkamp is here! HeyGuys\r\n", current);
   sendMsg(payload);
   for (;;){
@@ -94,7 +106,8 @@ void* writerTHEThread(void* context){
 
 
 int main(){
-  struct connectionData connectionData;
+  //here to joinChannel could be put in its own function in the twitch.h file?
+  struct connectionData conData;
   twitchsock = socket(AF_INET, SOCK_STREAM, 0);
   if(twitchsock == -1){
     printf("couldn't connect to socket");
@@ -112,7 +125,7 @@ int main(){
   twitchaddr.sin_family = AF_INET;
   twitchaddr.sin_addr.s_addr = *(long *)host->h_addr_list[0];
   twitchaddr.sin_port = htons(6667);
-  connectionData.sockfd = twitchsock;
+  conData.sockfd = twitchsock;
    if (connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0) {
     printf("-----[failed to connect to server]-----\n");
     exit(0);
@@ -147,8 +160,14 @@ int main(){
    pthread_t writerThread;
    pthread_t readerThread;
    
-   pthread_create(&writerThread, NULL, writerTHEThread, (void *) &connectionData);
-   pthread_create(&readerThread, NULL, readerTHEThread, (void *) &connectionData);
+
+   pthread_create(&writerThread, NULL, writerTHEThread, (void *) &conData);
+   pthread_create(&readerThread, NULL, readerTHEThread, (void *) &conData);
+
+   conData.writerThread = writerThread;
+   conData.readerThread = readerThread;
+
+   connData = &conData;
    
    pthread_join(writerThread, NULL);
    sleep(1);
