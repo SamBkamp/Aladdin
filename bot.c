@@ -13,6 +13,37 @@
 
 struct connectionData *connData;
 
+char* analyseInput(char* strinput);
+void* readerTHEThread(void* context);
+void* writerTHEThread(void* context);
+
+int main(){
+  struct connectionData conData;
+
+  setup();
+  joinChannel("#bkamp_");
+  
+  
+  pthread_t writerThread;
+  pthread_t readerThread;
+  
+  
+  pthread_create(&writerThread, NULL, writerTHEThread, (void *) &conData);
+  pthread_create(&readerThread, NULL, readerTHEThread, (void *) &conData);
+  
+  conData.writerThread = writerThread;
+  conData.readerThread = readerThread;
+  
+  connData = &conData;
+  
+  pthread_join(writerThread, NULL);
+  sleep(1);
+  pthread_join(readerThread, NULL);
+  
+  
+  return 0;
+}
+
 
 //I hate this entire function
 char* analyseInput(char* strinput){
@@ -51,7 +82,6 @@ char* analyseInput(char* strinput){
 }
 
 
-
 void* readerTHEThread(void* context){
   char buff[1024];
   
@@ -73,6 +103,7 @@ void* readerTHEThread(void* context){
   printf("closing writer thread\n");
 }
 
+
 void* writerTHEThread(void* context){
   char payload[50];
   
@@ -91,35 +122,6 @@ void* writerTHEThread(void* context){
     }
     free(payload);
   }
-}
-
-
-
-int main(){
-  struct connectionData conData;
-
-  setup();
-  joinChannel("#bkamp_");
-  
-  
-  pthread_t writerThread;
-  pthread_t readerThread;
-  
-  
-  pthread_create(&writerThread, NULL, writerTHEThread, (void *) &conData);
-  pthread_create(&readerThread, NULL, readerTHEThread, (void *) &conData);
-  
-  conData.writerThread = writerThread;
-  conData.readerThread = readerThread;
-  
-  connData = &conData;
-  
-  pthread_join(writerThread, NULL);
-  sleep(1);
-  pthread_join(readerThread, NULL);
-  
-  
-  return 0;
 }
 
 
