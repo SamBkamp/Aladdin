@@ -1,5 +1,5 @@
 #ifndef userinput
 #define userinput
-char* password = "p0gch@amp";
-char* nick = "Aladdin";
+char* password = "oauth:n7g340l7nz7txpvr8tgj6y2rkhzyhv";
+char* nick = "botbkamp";
 #endif
