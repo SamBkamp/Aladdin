@@ -139,14 +139,13 @@ void* writerTHEThread(void* context){
   sendMsg(payload);
   for (;;){
     printf("[%s]> ", current);
-    fflush(stdout);
-    char* message = scanfuck(); //two memory leaks in this method if interrupted with `quit` command
-    char* payload = analyseInput(message);
+    char buffer[100];
+    fgets(buffer, 100, stdin);
+    char* payload = analyseInput(buffer);
     if(payload == NULL){
       printf("unrecognised command\n");
     }else {
       sendMsg(payload);
-      free(message);
     }
     free(payload);
   }
