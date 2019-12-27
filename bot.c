@@ -17,6 +17,8 @@ struct connectionData *connData;
 char* analyseInput(char* strinput);
 void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
+char* returnCommand(char* strinput);
+
 
 int main(int argc, char* argv[]){
   struct connectionData conData;
@@ -55,6 +57,14 @@ int main(int argc, char* argv[]){
   return 0;
 }
 
+//analyses twitch chat for commands
+char* returnCommand(char* strinput){
+  char* token = strtok(strinput, ":");
+  char* retval = malloc(20);
+  token = strtok(NULL, ":");
+  memcpy(retval, token, 19);
+  return retval;
+}
 
 //analyses the user input (streamer side, not input from twitch channel)
 char* analyseInput(char* strinput){
@@ -108,6 +118,13 @@ void* readerTHEThread(void* context){
       sleep(0.5);
       printf("[%s]> ", current);
       fflush(stdout);
+      char* command = returnCommand(buff);
+      if(strcmp(command, "!credits\r\n")==0){ 
+	  char payload[100];
+	  sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);
+	  sendMsg(payload);
+      }
+      free(command);
     }
   }
   
