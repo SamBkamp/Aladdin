@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <pthread.h>
 #include "userinput.h" //username and password
-#include "scanfuck.h"
 #include <signal.h>
 #include "twitch.h"
 
