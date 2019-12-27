@@ -45,7 +45,7 @@ void setup(){
   }
   
   //inital login to twitch irc servers
-   char buff[1000];
+   char buff[800];
    char payload[100] = "PASS ";
    //this entire strcat section will be changed when get config files/db implemented
    //TODO 17: change this to sprintf lmao
@@ -68,7 +68,7 @@ void setup(){
 //TODO 20: move joinChannels to headerfile
 void joinChannel(char* message){
   char payload[50];
-  char buff[1024];
+  char buff[500];
   sprintf(payload, "JOIN %s\r\n", message);
   sendMsg(payload); 
   sprintf(current, "%s", message);
