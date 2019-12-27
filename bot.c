@@ -13,16 +13,28 @@
 
 struct connectionData *connData;
 
+
 char* analyseInput(char* strinput);
 void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 
-int main(){
+int main(int argc, char* argv[]){
   struct connectionData conData;
+  
+  if(argc < 3){
+    printf("usage: Aladdin --join <channel name>\n");
+    exit(0);
+  }
+  if (strcmp(argv[1], "--join")!=0){
+    printf("usage: Aladdin --join <channel name>\n");
+    exit(0);
+  }
+ 
 
   setup();
-  joinChannel("#bkamp_");
-  
+  char channelName[20];
+  sprintf(channelName, "#%s", argv[2]);
+  joinChannel(channelName);
   
   pthread_t writerThread;
   pthread_t readerThread;
@@ -40,12 +52,11 @@ int main(){
   sleep(1);
   pthread_join(readerThread, NULL);
   
-  
   return 0;
 }
 
 
-//I hate this entire function
+//analyses the user input (streamer side, not input from twitch channel)
 char* analyseInput(char* strinput){
   char command[10];
   char body[100];
@@ -81,9 +92,9 @@ char* analyseInput(char* strinput){
   return NULL;
 }
 
-
+//thread that reads from socket
 void* readerTHEThread(void* context){
-  char buff[1024];
+  char buff[500];
   
   for (;;){
     bzero(buff, sizeof(buff));
@@ -103,16 +114,16 @@ void* readerTHEThread(void* context){
   printf("closing writer thread\n");
 }
 
-
+//thread that writes to socket
 void* writerTHEThread(void* context){
   char payload[50];
   
-  sprintf(payload,"PRIVMSG %s :botbkamp is here! HeyGuys\r\n", current);
+  sprintf(payload,"PRIVMSG %s :%s is here! HeyGuys\r\n", current, nick);
   sendMsg(payload);
   for (;;){
     printf("[%s]> ", current);
     fflush(stdout);
-    char* message = scanfuck();
+    char* message = scanfuck(); //two memory leaks in this method if interrupted with `quit` command
     char* payload = analyseInput(message);
     if(payload == NULL){
       printf("unrecognised command\n");
