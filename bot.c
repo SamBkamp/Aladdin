@@ -67,30 +67,12 @@ char* returnCommand(char* strinput){
 
 //analyses the user input (streamer side, not input from twitch channel)
 char* analyseInput(char* strinput){
-  char command[10];
-  char body[100];
-  int i;
 
-  //gets the first 'word' of the input 
-  for(i=0; strinput[i] != ' '  && i < strlen(strinput); i++){
-    char buff[10] = "";
-    buff[strlen(buff)] = strinput[i];
-    buff[strlen(buff)+1] = '\0';
-    strcat(command, buff);
-    bzero(buff, sizeof(buff));
-  }
-  //I hate this loop
-  for(int j=i; j < strlen(strinput); j++){
-    char buff[10] = "";
-    buff[strlen(buff)] = strinput[j];
-    buff[strlen(buff)+1] = '\0';
-    strcat(body, buff);
-    bzero(buff, sizeof(buff));
-  }
+  char* token = strtok(strinput, " ");
   
-  if(strcmp(command, "say")==0){
+  if(strcmp(token, "say")==0){
     char buuf[50];
-    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, body); 
+    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, strtok(NULL, " ")); 
     char* addr = malloc(50);
     memcpy(addr, &buuf, sizeof(buuf));
     return addr;
