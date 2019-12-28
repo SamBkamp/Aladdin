@@ -9,6 +9,7 @@
 #include "userinput.h" //username and password
 #include <signal.h>
 #include "twitch.h"
+#include "cmdfile.h"
 
 struct connectionData *connData;
 
@@ -31,7 +32,10 @@ int main(int argc, char* argv[]){
     exit(0);
   }
  
-
+  if(init()==-1){
+    printf("Warning: couldn't load commands\n");
+  }
+  
   setup();
   char channelName[20];
   sprintf(channelName, "#%s", argv[2]);
@@ -52,6 +56,7 @@ int main(int argc, char* argv[]){
   pthread_join(writerThread, NULL);
   sleep(1);
   pthread_join(readerThread, NULL);
+
   
   return 0;
 }
@@ -67,48 +72,33 @@ char* returnCommand(char* strinput){
 
 //analyses the user input (streamer side, not input from twitch channel)
 char* analyseInput(char* strinput){
-  char command[10];
-  char body[100];
-  int i;
 
-  //gets the first 'word' of the input 
-  for(i=0; strinput[i] != ' '  && i < strlen(strinput); i++){
-    char buff[10] = "";
-    buff[strlen(buff)] = strinput[i];
-    buff[strlen(buff)+1] = '\0';
-    strcat(command, buff);
-    bzero(buff, sizeof(buff));
-  }
-  //I hate this loop
-  for(int j=i; j < strlen(strinput); j++){
-    char buff[10] = "";
-    buff[strlen(buff)] = strinput[j];
-    buff[strlen(buff)+1] = '\0';
-    strcat(body, buff);
-    bzero(buff, sizeof(buff));
-  }
+  char* token = strtok(strinput, " ");
   
-  if(strcmp(command, "say")==0){
+  if(strcmp(token, "say")==0){
     char buuf[50];
-    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, body); 
+    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, strtok(NULL, " ")); 
     char* addr = malloc(50);
     memcpy(addr, &buuf, sizeof(buuf));
     return addr;
-  }else if (strcmp(command, "quit")==0){
-    pthread_kill(connData->writerThread, SIGINT);
-    pthread_kill(connData->readerThread, SIGINT);
+  }else if (strcmp(token, "quit\n")==0){
+    finish();
+    pthread_kill(connData->writerThread, SIGTERM);
+    pthread_kill(connData->readerThread, SIGTERM);
+    printf("-------------------\n");
   }
+  
   return NULL;
 }
 
-//thread that reads from socket
+//thread that reads from socket (twitch chat)
 void* readerTHEThread(void* context){
   char buff[500];
+  char outputmsg[1024];
   
   for (;;){
     bzero(buff, sizeof(buff));
-    read(twitchsock, buff, sizeof(buff));
-    
+    read(twitchsock, buff, sizeof(buff));    
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
       char* payload = "PONG :tmi.twitch.tv\r\n";
       sendMsg(payload);
@@ -122,6 +112,11 @@ void* readerTHEThread(void* context){
 	  char payload[100];
 	  sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);
 	  sendMsg(payload);
+      }else if(test_command(command, outputmsg, 100)==1){
+	char* addr = (char *)malloc(1024);
+	sprintf(addr, "PRIVMSG %s :%s\r\n", current, outputmsg); 
+        sendMsg(addr);
+	free(addr);
       }
       free(command);
     }
