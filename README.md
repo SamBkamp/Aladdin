@@ -9,12 +9,12 @@ command line twitch bot written in c
 
 ## Quick Start
 ```
-$ ./compile.sh
+$ make
 $ ./Aladdin
 ```
 ## Usage
 1. setup `userinput.h` with your [oath key](https://twitchapps.com/tmi/)
-2. run the compiler with `./compile.sh`
+2. run the compiler with `make`
 3. run `./Aladdin --join <channel name>` where the channel name is the twitch account name you want to connect to
 
 ## Commands
@@ -24,6 +24,10 @@ send a message to the currently selected channel
 - `[#channel]> quit`
 
 quits the application
+
+## Chat Commands
+- by default the bot accepts the command `!credits` from twitch chat
+You can add commands in the commands.csv file in the format `<command>,<return message>`. Support to add commands from within in bot is coming soon 
 
 
 ## Support
