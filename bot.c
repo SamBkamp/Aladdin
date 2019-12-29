@@ -14,11 +14,11 @@
 struct connectionData *connData;
 
 
-char* analyseInput(char* strinput);
+int  analyseInput(char* strinput);
 void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 char* returnCommand(char* strinput);
-
+int writeToFile(char* command, char* body);
 
 int main(int argc, char* argv[]){
   struct connectionData conData;
@@ -70,25 +70,67 @@ char* returnCommand(char* strinput){
   return retval;
 }
 
+//TODO 35: add GOTO for failing conditions
+int writeToFile(char* command, char* body){
+  FILE* f = fopen("commands.csv", "a");
+  if (f == NULL){
+    perror("error: couldn't open commands.csv");
+    fclose(f);
+    return -1;
+  }
+  if(fprintf(f, "%s,%s\n", command, body)==-1){
+    perror("couldn't write to file");
+    fclose(f);
+    return -1;
+  }
+  fclose(f);
+  return 0;
+};
+
 //analyses the user input (streamer side, not input from twitch channel)
-char* analyseInput(char* strinput){
+int analyseInput(char* strinput){
 
   char* token = strtok(strinput, " ");
   
   if(strcmp(token, "say")==0){
     char buuf[50];
-    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, strtok(NULL, " ")); 
-    char* addr = malloc(50);
-    memcpy(addr, &buuf, sizeof(buuf));
-    return addr;
+    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, strtok(NULL, " "));
+    if(sendMsg(buuf)==-1){
+      return -1;
+    } 
   }else if (strcmp(token, "quit\n")==0){
     finish();
     pthread_kill(connData->writerThread, SIGTERM);
     pthread_kill(connData->readerThread, SIGTERM);
     printf("-------------------\n");
+  }else if(strncmp(token, "addcmd", 6)==0){
+    if(strlen(strinput)==7){ //checks for arguments
+      printf("addcmd <command> <message>\n");
+      return 0;
+    }
+    char* commandName = strtok(NULL, " ");
+    char body[strlen(strinput)-strlen(commandName)-6]; //char body has to be size of command body, so total length - length of commandName - length of strin 'add cmd' (6)
+    token = strtok(NULL, " ");
+    sprintf(body, ""); 
+    while(token != NULL){
+      sprintf(body, "%s ", strcat(body, token));
+      token = strtok(NULL, " ");
+    }
+    body[strlen(body)-2] = 0;
+    if(strlen(commandName)==1 || strlen(body)==0){
+      printf("addcmd <command> <message>\n");
+      return 0;
+    }
+    if(writeToFile(commandName, body)==-1){
+      return -1;
+    }
+    //TODO 34: hacky way to add new command to struct of commands
+    finish();
+    init();
+    return 0;
   }
   
-  return NULL;
+  return -1;
 }
 
 //thread that reads from socket (twitch chat)
@@ -150,15 +192,7 @@ void* writerTHEThread(void* context){
     char buffer[1024];
     //get streamer inputt
     fgets(buffer, 1024, stdin);
-    char* payload = analyseInput(buffer);
-    if(payload == NULL){
-      printf("unrecognised command\n");
-    }else {
-      if(sendMsg(payload)==-1){
-	return NULL;
-      }
-    }
-    free(payload);
+    analyseInput(buffer);
   }
 }
 
