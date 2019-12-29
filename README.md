@@ -25,6 +25,7 @@ send a message to the currently selected channel
 
 quits the application
 - `[#channel]> addcmd <command> <command body>`
+
 adds command `<command>`. When it is typed in chat, the bot responds with `<command body>`
 
 ## Chat Commands
