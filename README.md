@@ -24,6 +24,8 @@ send a message to the currently selected channel
 - `[#channel]> quit`
 
 quits the application
+- `[#channel]> addcmd <command> <command body>`
+adds command `<command>`. When it is typed in chat, the bot responds with `<command body>`
 
 ## Chat Commands
 - by default the bot accepts the command `!credits` from twitch chat
