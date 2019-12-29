@@ -99,19 +99,29 @@ void* readerTHEThread(void* context){
   for (;;){
     bzero(buff, sizeof(buff));
     read(twitchsock, buff, sizeof(buff));    
+    //catches ping from twitch servers 
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
+
       char* payload = "PONG :tmi.twitch.tv\r\n";
-      sendMsg(payload);
+      if(sendMsg(payload)==-1){
+	return NULL;
+      }
     }else {
       printf("\r%s", buff);
       sleep(0.5);
       printf("[%s]> ", current);
       fflush(stdout);
+      
       char* command = returnCommand(buff);
       if(strcmp(command, "!credits\r\n")==0){ 
-	  char payload[100];
-	  sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);
-	  sendMsg(payload);
+	//hard coded command
+	char payload[100];
+	sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);
+
+	if(sendMsg(payload)==-1){
+	  return NULL;
+	}
+	
       }else if(test_command(command, outputmsg, 100)==1){
 	char* addr = (char *)malloc(1024);
 	sprintf(addr, "PRIVMSG %s :%s\r\n", current, outputmsg); 
@@ -130,16 +140,23 @@ void* writerTHEThread(void* context){
   char payload[50];
   
   sprintf(payload,"PRIVMSG %s :%s is here! HeyGuys\r\n", current, nick);
-  sendMsg(payload);
+
+  if(sendMsg(payload)==-1){
+    return NULL;
+  }
+  
   for (;;){
     printf("[%s]> ", current);
-    char buffer[100];
-    fgets(buffer, 100, stdin);
+    char buffer[1024];
+    //get streamer inputt
+    fgets(buffer, 1024, stdin);
     char* payload = analyseInput(buffer);
     if(payload == NULL){
       printf("unrecognised command\n");
     }else {
-      sendMsg(payload);
+      if(sendMsg(payload)==-1){
+	return NULL;
+      }
     }
     free(payload);
   }
