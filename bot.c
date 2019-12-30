@@ -63,10 +63,14 @@ int main(int argc, char* argv[]){
 
 //analyses twitch chat for commands
 char* returnCommand(char* strinput){
+  sscanf(strinput, "%[^\r\n]", strinput);
+
   char* token = strtok(strinput, ":");
-  char* retval = malloc(20);
-  token = strtok(NULL, ":");
-  memcpy(retval, token, 19);
+  token = strtok(NULL, ":"); //parses for contents of packet
+  char* command = strtok(token, " "); //parses for first word of message
+  char finalCommand[strlen(command-2)];
+  char* retval = (char *)malloc(strlen(command));
+  strcpy(retval, command);
   return retval;
 }
 
@@ -168,7 +172,7 @@ void* readerTHEThread(void* context){
       fflush(stdout);
       
       char* command = returnCommand(buff);
-      if(strcmp(command, "!credits\r\n")==0){ 
+      if(strcmp(command, "!credits")==0){ 
 	//hard coded command
 	char payload[100];
 	sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);
