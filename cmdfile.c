@@ -48,7 +48,7 @@ int init() {
         tmp->cmd = (char *)malloc(sizeof(char)*cmdSize);
         tmp->msg = (char *)malloc(sizeof(char)*msgSize); 
 	sscanf(buffer, "%[^,],%[^\n]", tmp->cmd, tmp->msg);
-	strcat(tmp->cmd, "\r\n");
+	//strcat(tmp->cmd, "\r\n");
 	tmp++; 
         cmdlen++;
     }
