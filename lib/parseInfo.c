@@ -39,6 +39,6 @@ int parseInfo(){
     }
   }
   printf("nick is: %s\npass is: %s\n", nick, password);
-  return 1;
+  return 0;
 }
 

@@ -1,2 +1,2 @@
 all:
-	gcc cmdfile.c bot.c -Wall -o Aladdin -lpthread		
+	gcc lib/cmdfile.c bot.c -Wall -o Aladdin -lpthread		
