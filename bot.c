@@ -6,11 +6,11 @@
 #include <string.h> //strtok
 #include <errno.h>
 #include <pthread.h>
-#include "userinput.h" //username and password
+//#include "userinput.h" //username and password
 #include <signal.h>
+#include "parseInfo.h"
 #include "twitch.h"
 #include "cmdfile.h"
-
 struct connectionData *connData;
 
 
@@ -21,8 +21,9 @@ char* returnCommand(char* strinput);
 int writeToFile(char* command, char* body);
 
 int main(int argc, char* argv[]){
+  parseInfo();
   struct connectionData conData;
-  
+
   if(argc < 3){
     printf("usage: Aladdin --join <channel name>\n");
     exit(0);
