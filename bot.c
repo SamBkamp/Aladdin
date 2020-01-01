@@ -6,11 +6,10 @@
 #include <string.h> //strtok
 #include <errno.h>
 #include <pthread.h>
-//#include "userinput.h" //username and password
 #include <signal.h>
-#include "parseInfo.h"
-#include "twitch.h"
-#include "cmdfile.h"
+#include "lib/parseInfo.c"
+#include "lib/twitch.c"
+#include "lib/cmdfile.h"
 struct connectionData *connData;
 
 
