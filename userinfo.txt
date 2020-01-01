@@ -1,2 +1,2 @@
-pass:oauthp0gch@mp
-nick:Aladdin
+pass=oauth:p0gch@mp
+nick=Aladdin
