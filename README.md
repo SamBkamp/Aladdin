@@ -13,7 +13,7 @@ $ make
 $ ./Aladdin
 ```
 ## Usage
-1. setup `userinput.h` with your [oath key](https://twitchapps.com/tmi/)
+1. setup `userinfo.txt` with your [oath key](https://twitchapps.com/tmi/) and bot's nick name
 2. run the compiler with `make`
 3. run `./Aladdin --join <channel name>` where the channel name is the twitch account name you want to connect to
 
