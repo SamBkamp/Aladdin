@@ -18,6 +18,7 @@ void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 char* returnCommand(char* strinput);
 int writeToFile(char* command, char* body);
+char* commandSender(char* strinput);
 
 int main(int argc, char* argv[]){
   parseInfo();
@@ -90,6 +91,13 @@ int writeToFile(char* command, char* body){
   fclose(f);
   return 0;
 };
+
+//returns the sender of a twitch chat command, expects line of twitch chat 
+char* commandSender(char* strinput){
+  char* tok = strtok(strinput, "!"); //expected input: :usr!usr@usr.tmi.twitch.tv PRIVMSG #chan :msg
+  tok++; //skips the first character ':'
+  return tok;
+}
 
 //analyses the user input (streamer side, not input from twitch channel)
 int analyseInput(char* strinput){
@@ -180,7 +188,11 @@ void* readerTHEThread(void* context){
 	if(sendMsg(payload)==-1){
 	  return NULL;
 	}
-	
+      }else if(strcmp(command, "!vanish")==0){
+	char* payload = (char *)malloc(1024);
+	sprintf(payload, "PRIVMSG %s :/timeout %s 1\r\n", current, commandSender(buff));
+	sendMsg(payload);
+	free(payload);
       }else if(test_command(command, outputmsg, 100)==1){
 	char* addr = (char *)malloc(1024);
 	sprintf(addr, "PRIVMSG %s :%s\r\n", current, outputmsg); 
