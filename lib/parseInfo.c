@@ -13,7 +13,7 @@ int parseInfo(){
   FILE* fp = fopen(inputfile, "r");
 
   if (fp == NULL){
-    printf("couldn't open userinfo.txt");
+    printf("couldn't open userinfo.txt\n");
     return -1;
   }
 
@@ -26,7 +26,7 @@ int parseInfo(){
       buff[i+1] = 0;
     }
     if(strcmp(buff, "nick")!=0 && strcmp(buff, "pass")!=0){ //checks to make sure prefix is correct
-      printf("incorrectly formatted userinfo.txt\n%s\n", buff);
+      printf("incorrectly formatted userinfo.txt\n");
       return -1;
       }
     
@@ -38,7 +38,6 @@ int parseInfo(){
       strcpy(password, strtok(NULL, "="));
     }
   }
-  printf("nick is: %s\npass is: %s\n", nick, password);
   return 0;
 }
 

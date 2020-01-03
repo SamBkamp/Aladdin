@@ -19,20 +19,38 @@ void* writerTHEThread(void* context);
 char* returnCommand(char* strinput);
 int writeToFile(char* command, char* body);
 char* commandSender(char* strinput);
+int oauthsetup();
 
 int main(int argc, char* argv[]){
-  parseInfo();
   struct connectionData conData;
 
-  if(argc < 3){
+  if(argc < 2){
     printf("usage: Aladdin --join <channel name>\n");
     exit(0);
   }
-  if (strcmp(argv[1], "--join")!=0){
+  if (strcmp(argv[1], "--join")==0){
+    if(argc < 3){
+      printf("usage: Aladdin --join <channel name>\n");
+      exit(0);
+    }
+  }else if (strcmp(argv[1], "--setup")==0){
+    //printf("--setup has not been implemented yet\n");
+    //exit(0);
+    if(oauthsetup()==-1){
+      printf("fatal error, exiting now\n");
+      exit(-1);
+    }
+    exit(0);
+  }else {
     printf("usage: Aladdin --join <channel name>\n");
     exit(0);
   }
- 
+  
+  if (parseInfo()==-1){
+    printf("run with --setup to add twitch auth\n");
+    return -1;
+  }
+  
   if(init()==-1){
     printf("Warning: couldn't load commands\n");
   }
@@ -99,6 +117,27 @@ char* commandSender(char* strinput){
   return tok;
 }
 
+//setups userinfo.txt
+int oauthsetup(){
+  FILE* fp = fopen("userinfo.txt", "w");
+  if(fp==NULL){
+    printf("Error: could't open userinfo.txt");
+    return -1;
+  }
+  printf("You can get your twitch token from twitchapps.com/tmi\ntwitch Oauth key: ");
+  char twitchauth[37];
+  char botnick[100];
+  scanf("%s", twitchauth);
+  printf("twitch bot account name: ");
+  scanf("%s", botnick);
+  if(fprintf(fp, "pass=%s\nnick=%s", twitchauth, botnick)==-1){
+    perror("Error: couldn't write to file");
+    return -1;
+  }
+  return 1;
+}
+
+
 //analyses the user input (streamer side, not input from twitch channel)
 int analyseInput(char* strinput){
   int commandLen = strlen(strinput);
@@ -124,8 +163,6 @@ int analyseInput(char* strinput){
     finish();
     pthread_kill(connData->writerThread, SIGTERM);
     pthread_kill(connData->readerThread, SIGTERM);
-    printf("-------------------\n");
-
   }else if(strncmp(token, "addcmd", 6)==0){
 
     if(strlen(strinput)==7){ //checks for arguments
@@ -134,7 +171,16 @@ int analyseInput(char* strinput){
     }
     
     char* commandName = strtok(NULL, " ");
-    char body[strlen(strinput)-strlen(commandName)-6]; //char body has to be size of command body, so total length - length of commandName - length of strin 'add cmd' (6)
+    if (strcmp(commandName, "!credits")==0 || strcmp(commandName, "!vanish")==0){
+      printf("Error: can't override command '%s'\n", commandName);
+      return 0;
+    }
+    char buffer[10]; //TODO : add method in lib to not require output buffer
+    if(test_command(commandName, buffer, 1)==1){
+      printf("Error: command '%s' already exists\n", commandName);
+      return 0;
+    }
+    char body[strlen(strinput)-strlen(commandName)-6]; //char body has to be size of command body, so total length - length of commandName - length of strin 'addcmd' (6)
     token = strtok(NULL, " ");
     sprintf(body, ""); 
     while(token != NULL){
@@ -154,7 +200,6 @@ int analyseInput(char* strinput){
     init();
     return 0;
   }
-  
   return -1;
 }
 
@@ -184,7 +229,6 @@ void* readerTHEThread(void* context){
 	//hard coded command
 	char payload[100];
 	sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);
-
 	if(sendMsg(payload)==-1){
 	  return NULL;
 	}
