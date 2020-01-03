@@ -174,9 +174,8 @@ int analyseInput(char* strinput){
     if (strcmp(commandName, "!credits")==0 || strcmp(commandName, "!vanish")==0){
       printf("Error: can't override command '%s'\n", commandName);
       return 0;
-    }
-    char buffer[10]; //TODO : add method in lib to not require output buffer
-    if(test_command(commandName, buffer, 1)==1){
+    } 
+    if(test_command(commandName, NULL, 1)==1){
       printf("Error: command '%s' already exists\n", commandName);
       return 0;
     }

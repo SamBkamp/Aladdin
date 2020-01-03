@@ -61,17 +61,19 @@ int init() {
 }
 
 int test_command(const char *test_cmd, char *outputMsg, int maxOutputLen) {
-    int i;
-    Commands *tmp = allCommands;
-    for(i = 0; i < cmdlen; i++, tmp++) {
-        if (strcmp(test_cmd,tmp->cmd) == 0) {
-            strncpy(outputMsg, tmp->msg, maxOutputLen);
-            return 1;
-        }
-
+  int i;
+  Commands *tmp = allCommands;
+  for(i = 0; i < cmdlen; i++, tmp++) {
+    if (strcmp(test_cmd,tmp->cmd) == 0) {
+      if(outputMsg != NULL){
+	strncpy(outputMsg, tmp->msg, maxOutputLen);
+      }
+      return 1;
     }
-
-    return 0;
+    
+  }
+  
+  return 0;
 }
 
 
