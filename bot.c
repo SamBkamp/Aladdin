@@ -141,6 +141,8 @@ int oauthsetup(){
 //analyses the user input (streamer side, not input from twitch channel)
 int analyseInput(char* strinput){
   int commandLen = strlen(strinput);
+  sscanf(strinput, "%[^\n]", strinput);
+  char* strinput2 = strdup(strinput);
   char* token = strtok(strinput, " ");
   
   if(strcmp(token, "say")==0){
@@ -158,14 +160,33 @@ int analyseInput(char* strinput){
     sprintf(buuf, "PRIVMSG %s :%s\r\n", current, commandBody);
     if(sendMsg(buuf)==-1){
       return -1;
-    } 
-  }else if (strcmp(token, "quit\n")==0){
+    }
+    return 0;
+  }else if (strcmp(token, "quit")==0){
     finish();
     pthread_kill(connData->writerThread, SIGTERM);
     pthread_kill(connData->readerThread, SIGTERM);
+  }else if(strcmp(token, "ls")==0){
+    list_bot_commands();
+    return 0;
+  }else if(strncmp(token, "rmcmd", 5)==0){
+    if(strlen(strinput2)<=6){ //checks for arguments
+      printf("rmcmd <command>   %s\n", strinput2);
+      return 0;
+    }
+    char* commandName = strtok(NULL, " ");
+    if(test_command(commandName, NULL, 100)!=1){
+      printf("'%s' is not a command\n", commandName);
+      return 0;
+    }
+    if(remove_command(commandName)==-1){
+      return -1;
+    }
+    printf("removed command '%s'\n", commandName);
+    return 0;
   }else if(strncmp(token, "addcmd", 6)==0){
 
-    if(strlen(strinput)==7){ //checks for arguments
+    if(strlen(strinput2)<=7){ //checks for arguments
       printf("addcmd <command> <message>\n");
       return 0;
     }
@@ -199,7 +220,7 @@ int analyseInput(char* strinput){
     init();
     return 0;
   }
-  return -1;
+  return -2;
 }
 
 //thread that reads from socket (twitch chat)
@@ -264,7 +285,9 @@ void* writerTHEThread(void* context){
     char buffer[1024];
     //get streamer inputt
     fgets(buffer, 1024, stdin);
-    analyseInput(buffer);
+    if(analyseInput(buffer)==-2){
+      printf("unrecognised command\n");
+    }
   }
 }
 

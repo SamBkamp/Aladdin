@@ -12,6 +12,8 @@ typedef struct {
 Commands *allCommands;
 int cmdlen;
 
+int lines = 0;
+
 #define cmdFile "commands.csv"
 #define MAX_LEN 4096
 
@@ -26,7 +28,6 @@ int init() {
         return -1;
 
     char buffer[MAX_LEN + 1];
-    int lines = 0;
 
     //count number of lines in file
     while(fgets(buffer, MAX_LEN, fp) != NULL)
@@ -34,7 +35,6 @@ int init() {
     
     //reset position in file to beginning
     fseek(fp, 0, SEEK_SET);
-
     allCommands = (Commands *)malloc(sizeof(Commands)*lines);
     Commands *tmp = allCommands;
     cmdlen = 0;
@@ -76,6 +76,36 @@ int test_command(const char *test_cmd, char *outputMsg, int maxOutputLen) {
   return 0;
 }
 
+int remove_command(char* remove_cmd){
+  int i;
+  Commands* tmp = allCommands;
+  Commands* buff;
+  for(i=0; i < cmdlen; i++, tmp++){
+    if (strcmp(remove_cmd,tmp->cmd) == 0) {
+      buff = tmp;
+      break;
+    }
+  }
+  tmp++;
+  for(int j = i; j < cmdlen-i; j++, tmp++, buff++){
+    buff->cmd = tmp->cmd;
+    buff->msg = tmp->msg;
+  }
+
+  lines--;
+  allCommands = (Commands *)realloc(allCommands, sizeof(Commands)*lines);
+  cmdlen--;
+  return 0;
+}
+
+void list_bot_commands(){ //for debugging
+  int i;
+  Commands* tmp = allCommands;
+  printf("total commands: %d\n", cmdlen);
+  for(i=0; i < cmdlen; i++, tmp++){
+    printf("%s --> %s\n", tmp->cmd, tmp->msg);
+  }
+}
 
 int finish() {
     int i;
