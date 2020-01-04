@@ -13,10 +13,7 @@ $ make
 $ ./Aladdin
 ```
 ## Usage
-1. compile with 
-```
-$ make
-```
+1. compile with `$ make`
 2. setup program with `$ ./Aladdin --setup` you will need your [oath key](https://twitchapps.com/tmi/)(`oauth:` is included in the key) and bot's nick name
 3. run `$ ./Aladdin --join <channel name>` where the channel name is the twitch account name you want to connect to
 
@@ -30,6 +27,9 @@ quits the application
 - `[#channel]> addcmd <command> <command body>`
 
 adds command `<command>`. When it is typed in chat, the bot responds with `<command body>`
+- `[#channel]> rmcmd <command>`
+
+removes command `<command>`
 
 ## Chat Commands
 - by default the bot accepts the command `!credits` from twitch chat
