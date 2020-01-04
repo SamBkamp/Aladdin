@@ -85,7 +85,7 @@ int remove_command(char* remove_cmd){
     }
   }
   tmp++;
-  for(int j = i; j < cmdlen-i; j++, tmp++, buff++){
+  for(int j = i; j < cmdlen; j++, tmp++, buff++){
     buff->cmd = tmp->cmd;
     buff->msg = tmp->msg;
   }
