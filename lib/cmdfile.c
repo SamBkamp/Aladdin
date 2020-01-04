@@ -43,8 +43,6 @@ int init() {
         int cmdSize = strcspn(buffer, ",")+2;
 	int msgSize = lineSize-cmdSize-1;
 
-        //fprintf(stderr, "Buffer: \"%s\"\n\tlinesize: %d\t cmdSize: %d\t msgSize: %d\n", buffer, lineSize, cmdSize, msgSize);
-
         tmp->cmd = (char *)malloc(sizeof(char)*cmdSize);
         tmp->msg = (char *)malloc(sizeof(char)*msgSize); 
 	sscanf(buffer, "%[^,],%[^\n]", tmp->cmd, tmp->msg);
@@ -98,6 +96,19 @@ int remove_command(char* remove_cmd){
   return 0;
 }
 
+int add_command(char* add_cmd, char* add_msg){
+  lines++;
+  Commands* tmp = (Commands *)realloc(allCommands, sizeof(Commands)*lines);
+  Commands* lastcmd = (tmp + cmdlen);
+  lastcmd->cmd = (char *)malloc(strlen(add_cmd));
+  lastcmd->msg = (char *)malloc(strlen(add_msg));
+  strcpy(lastcmd->cmd, add_cmd);
+  strcpy(lastcmd->msg, add_msg);
+  allCommands = tmp;
+  cmdlen++;
+  return 0;
+}
+
 void list_bot_commands(){ //for debugging
   int i;
   Commands* tmp = allCommands;
@@ -108,13 +119,21 @@ void list_bot_commands(){ //for debugging
 }
 
 int finish() {
-    int i;
-    for(i = 0; i < cmdlen; i++) {
-        Commands *curr = (allCommands + i);
-        free(curr->cmd);
-        free(curr->msg);
+  int i;
+  FILE* fp = fopen("commands.csv", "w");
+  if(fp==NULL){
+    printf("couldn't open commands.csv\n");
+    return -1;
+  }
+  for(i = 0; i < cmdlen; i++) {
+    Commands *curr = (allCommands + i);
+    if(fprintf(fp, "%s,%s\n", curr->cmd, curr->msg) < 0){
+      printf("failed to save command `%s`\n", curr->cmd);
     }
-
-    free(allCommands);
-    return 0;
+    free(curr->cmd);
+    free(curr->msg);
+  }
+  free(allCommands);
+  fclose(fp);
+  return 0;
 }
