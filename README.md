@@ -32,8 +32,8 @@ adds command `<command>`. When it is typed in chat, the bot responds with `<comm
 removes command `<command>`
 
 ## Chat Commands
-- by default the bot accepts the command `!credits` from twitch chat
-You can add commands in the commands.csv file in the format `<command>,<return message>`.
+- by default the bot accepts the command `!credits` from twitch chat,
+You can add commands to the bot by using the `addcmd` function as mentioned in the Commands section.
 
 
 ## Support
