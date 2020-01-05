@@ -10,16 +10,17 @@
 #include "lib/parseInfo.c"
 #include "lib/twitch.c"
 #include "lib/cmdfile.h"
+#include "lib/parsers.c"
+
 struct connectionData *connData;
 
 
 int  analyseInput(char* strinput);
 void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
-char* returnCommand(char* strinput);
 int writeToFile(char* command, char* body);
-char* commandSender(char* strinput);
 int oauthsetup();
+
 
 int main(int argc, char* argv[]){
   struct connectionData conData;
@@ -28,14 +29,13 @@ int main(int argc, char* argv[]){
     printf("usage: Aladdin --join <channel name>\n");
     exit(0);
   }
+  
   if (strcmp(argv[1], "--join")==0){
     if(argc < 3){
       printf("usage: Aladdin --join <channel name>\n");
       exit(0);
     }
   }else if (strcmp(argv[1], "--setup")==0){
-    //printf("--setup has not been implemented yet\n");
-    //exit(0);
     if(oauthsetup()==-1){
       printf("fatal error, exiting now\n");
       exit(-1);
@@ -80,46 +80,6 @@ int main(int argc, char* argv[]){
   return 0;
 }
 
-//analyses twitch chat for commands
-char* returnCommand(char* strinput){
-  sscanf(strinput, "%[^\r\n]", strinput);
-
-  char* token = strtok(strinput, ":");
-  token = strtok(NULL, ":"); //parses for contents of packet
-  char* command = strtok(token, " "); //parses for first word of message
-  char finalCommand[strlen(command-2)];
-  char* retval = (char *)malloc(strlen(command));
-  strcpy(retval, command);
-  return retval;
-}
-
-//TODO 35: add GOTO for failing conditions
-//returns the sender of a twitch chat command, expects line of twitch chat 
-char* commandSender(char* strinput){
-  char* tok = strtok(strinput, "!"); //expected input: :usr!usr@usr.tmi.twitch.tv PRIVMSG #chan :msg
-  tok++; //skips the first character ':'
-  return tok;
-}
-
-//setups userinfo.txt
-int oauthsetup(){
-  FILE* fp = fopen("userinfo.txt", "w");
-  if(fp==NULL){
-    printf("Error: could't open userinfo.txt");
-    return -1;
-  }
-  printf("You can get your twitch token from twitchapps.com/tmi\ntwitch Oauth key: ");
-  char twitchauth[37];
-  char botnick[100];
-  scanf("%s", twitchauth);
-  printf("twitch bot account name: ");
-  scanf("%s", botnick);
-  if(fprintf(fp, "pass=%s\nnick=%s", twitchauth, botnick)==-1){
-    perror("Error: couldn't write to file");
-    return -1;
-  }
-  return 1;
-}
 
 
 //analyses the user input (streamer side, not input from twitch channel)
@@ -131,15 +91,14 @@ int analyseInput(char* strinput){
   
   if(strcmp(token, "say")==0){
 
-    char buuf[50];
-    char commandBody[commandLen];
-    
-    sprintf(commandBody, ""); //init the char array 
-    token = strtok(NULL, " ");
-    while(token != NULL){
-      sprintf(commandBody, "%s ", strcat(commandBody, token));
-      token = strtok(NULL, " ");
+    if(strlen(strinput2) < 5){
+      printf("usage: say <message>");
     }
+    char buuf[50];
+    char* commandBody;
+
+    commandBody = strchr(strinput2,' ');
+    commandBody++;
     
     sprintf(buuf, "PRIVMSG %s :%s\r\n", current, commandBody);
     if(sendMsg(buuf)==-1){
@@ -260,7 +219,7 @@ void* writerTHEThread(void* context){
   for (;;){
     printf("[%s]> ", current);
     char buffer[1024];
-    //get streamer inputt
+    //get streamer input
     fgets(buffer, 1024, stdin);
     if(analyseInput(buffer)==-2){
       printf("unrecognised command\n");
