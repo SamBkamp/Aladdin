@@ -22,6 +22,14 @@ char* returnCommand(char* strinput){
   return retval;
 }
 
+//helper function for oauthsetup to improve ux
+void askUser(char* authbuffer, char* nickbuffer){
+  printf("You can get your twitch token from twitchapps.com/tmi\ntwitch Oauth key: ");
+  fgets(authbuffer, 1024, stdin); 
+  printf("twitch bot account name: ");
+  fgets(nickbuffer, 1024, stdin);
+}
+
 //setups userinfo.txt
 int oauthsetup(){
   FILE* fp = fopen("userinfo.txt", "w");
@@ -29,12 +37,20 @@ int oauthsetup(){
     printf("Error: could't open userinfo.txt");
     return -1;
   }
-  printf("You can get your twitch token from twitchapps.com/tmi\ntwitch Oauth key: ");
   char twitchauth[37];
   char botnick[100];
-  scanf("%s", twitchauth);
-  printf("twitch bot account name: ");
-  scanf("%s", botnick);
+  askUser(twitchauth, botnick);
+  //user input validation i.e checks for 'oauth:' prefix
+  char buffer[100];
+  int i;
+  for(i=0; i<=strlen(twitchauth) && twitchauth[i] != ':'; i++){
+    buffer[i] = twitchauth[i];
+  }
+  buffer[i] = '\0';
+  if(strcmp(buffer, "oauth")!=0){
+    printf("invalid format. Please add the 'oauth:' prefix to your key\n");
+    askUser(twitchauth, botnick);
+  }
   if(fprintf(fp, "pass=%s\nnick=%s", twitchauth, botnick)==-1){
     perror("Error: couldn't write to file");
     return -1;

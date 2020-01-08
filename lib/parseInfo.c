@@ -21,7 +21,7 @@ int parseInfo(){
   while(fgets(buffer, 2048, fp)!= NULL){ //goes over file line by line
     sscanf(buffer, "%[^\n]", buffer);
     char buff[10];
-    for(int i = 0; i < strlen(buffer) && buffer[i] != '='; i++){ //parses character at ':'
+    for(int i = 0; i < strlen(buffer) && buffer[i] != '='; i++){ //parses character at '='
       buff[i] = buffer[i];
       buff[i+1] = 0;
     }
