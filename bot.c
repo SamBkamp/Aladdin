@@ -93,6 +93,7 @@ int analyseInput(char* strinput){
 
     if(strlen(strinput2) < 5){
       printf("usage: say <message>");
+      return 0;
     }
     char buuf[50];
     char* commandBody;

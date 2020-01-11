@@ -51,7 +51,7 @@ int oauthsetup(){
     printf("invalid format. Please add the 'oauth:' prefix to your key\n");
     askUser(twitchauth, botnick);
   }
-  if(fprintf(fp, "pass=%s\nnick=%s", twitchauth, botnick)==-1){
+  if(fprintf(fp, "pass=%snick=%s", twitchauth, botnick)==-1){
     perror("Error: couldn't write to file");
     return -1;
   }
