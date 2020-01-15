@@ -19,7 +19,6 @@ int  analyseInput(char* strinput);
 void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 int writeToFile(char* command, char* body);
-int oauthsetup();
 
 
 int main(int argc, char* argv[]){
@@ -92,7 +91,7 @@ int analyseInput(char* strinput){
   if(strcmp(token, "say")==0){
 
     if(strlen(strinput2) < 5){
-      printf("usage: say <message>");
+      printf("usage: say <message>\n");
       return 0;
     }
     char buuf[50];
