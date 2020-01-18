@@ -11,6 +11,7 @@
 #include "lib/twitch.c"
 #include "lib/cmdfile.h"
 #include "lib/parsers.c"
+#include "Twitch-libc/twitchlib.h"
 
 struct connectionData *connData;
 
@@ -54,14 +55,28 @@ int main(int argc, char* argv[]){
     printf("Warning: couldn't load commands\n");
   }
   
-  setup();
+  setup(); //sets up address
+
+  
+  char buff[500];
+  setupauth(twitchsock, password, nick, buff, sizeof(buff));
+  printf("%s", buff);
+  
   char channelName[20];
   sprintf(channelName, "#%s", argv[2]);
-  joinChannel(channelName);
+
+  bzero(buff, sizeof(buff));
+  
+  if(joinchannel(twitchsock, channelName, buff, sizeof(buff))==-1){
+    perror("failed to write to socket");
+    return -1;
+  }
+  printf("%s", buff);
+
+  sprintf(current, "%s", channelName);
   
   pthread_t writerThread;
   pthread_t readerThread;
-  
   
   pthread_create(&writerThread, NULL, writerTHEThread, (void *) &conData);
   pthread_create(&readerThread, NULL, readerTHEThread, (void *) &conData);
@@ -74,7 +89,7 @@ int main(int argc, char* argv[]){
   pthread_join(writerThread, NULL);
   sleep(1);
   pthread_join(readerThread, NULL);
-
+  
   
   return 0;
 }

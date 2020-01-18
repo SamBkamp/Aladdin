@@ -45,24 +45,6 @@ int setup(){
     perror("failed to connect to server\n");
     return -1;
   }
-  
-  //inital login to twitch irc servers
-   char buff[800];
-   char payload[100] = "PASS ";
-   //this entire strcat section will be changed when get config files/db implemented
-   //TODO 17: change this to sprintf lmao
-   strcat(payload, password);
-   strcat(payload, "\r\nNICK ");
-   strcat(payload, nick);
-   strcat(payload, "\r\n");
-   
-   if(write(twitchsock, payload, strlen(payload)) == -1){
-     printf("failed to write to socket \n");
-   }
-   
-   
-   read(twitchsock, buff, sizeof(buff));
-   printf("%s", buff);
 
    return 0;
 }
