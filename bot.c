@@ -8,19 +8,26 @@
 #include <pthread.h>
 #include <signal.h>
 #include "lib/parseInfo.c"
-#include "lib/twitch.c"
 #include "lib/cmdfile.h"
 #include "lib/parsers.c"
 #include "Twitch-libc/twitchlib.h"
 
-struct connectionData *connData;
+struct connectionData{
+  int sockfd;
+  pthread_t writerThread;
+  pthread_t readerThread;
+};
 
+struct sockaddr_in twitchaddr;
+struct connectionData *connData;
+int twitchsock;
+char currentChannel[100];
 
 int  analyseInput(char* strinput);
 void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 int writeToFile(char* command, char* body);
-
+int setupSocket();
 
 int main(int argc, char* argv[]){
   struct connectionData conData;
@@ -55,7 +62,7 @@ int main(int argc, char* argv[]){
     printf("Warning: couldn't load commands\n");
   }
   
-  setup(); //sets up address
+  setupSocket(); //sets up address
 
   
   char buff[500];
@@ -76,7 +83,7 @@ int main(int argc, char* argv[]){
   }
   printf("%s", buff);
 
-  sprintf(current, "%s", channelName);
+  sprintf(currentChannel, "%s", channelName);
   
   pthread_t writerThread;
   pthread_t readerThread;
@@ -101,7 +108,7 @@ int main(int argc, char* argv[]){
 
 //analyses the user input (streamer side, not input from twitch channel)
 int analyseInput(char* strinput){
-  int commandLen = strlen(strinput);
+  //int commandLen = strlen(strinput);
   sscanf(strinput, "%[^\n]", strinput);
   char* strinput2 = strdup(strinput);
   char* token = strtok(strinput, " ");
@@ -112,14 +119,12 @@ int analyseInput(char* strinput){
       printf("usage: say <message>\n");
       return 0;
     }
-    char buuf[50];
     char* commandBody;
 
     commandBody = strchr(strinput2,' ');
     commandBody++;
-    
-    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, commandBody);
-    if(sendMsg(buuf)==-1){
+    if(msgchannel(twitchsock, currentChannel, commandBody)==-1){
+      perror("could't send message");
       return -1;
     }
     return 0;
@@ -189,33 +194,39 @@ void* readerTHEThread(void* context){
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
 
       char* payload = "PONG :tmi.twitch.tv\r\n";
-      if(sendMsg(payload)==-1){
+      if(sendrawpacket(twitchsock, payload)==-1){
 	return NULL;
       }
     }else {
       printf("\r%s", buff);
       sleep(0.5);
-      printf("[%s]> ", current);
+      printf("[%s]> ", currentChannel);
       fflush(stdout);
       
       char* command = returnCommand(buff);
       if(strcmp(command, "!credits")==0){ 
 	//hard coded command
+	/*
 	char payload[100];
-	sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);
-	if(sendMsg(payload)==-1){
+	sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);*/
+	if(msgchannel(twitchsock,
+		      currentChannel,
+		      "This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n")==-1){
 	  return NULL;
 	}
       }else if(strcmp(command, "!vanish")==0){
 	char* payload = (char *)malloc(1024);
-	sprintf(payload, "PRIVMSG %s :/timeout %s 1\r\n", current, commandSender(buff));
-	sendMsg(payload);
+	sprintf(payload, "/timeout %s 1", commandSender(buff));
+        if(msgchannel(twitchsock, currentChannel, payload)==-1){
+	  perror("coulnd't send message");
+	  return NULL;
+	}
 	free(payload);
-      }else if(test_command(command, outputmsg, 100)==1){
-	char* addr = (char *)malloc(1024);
-	sprintf(addr, "PRIVMSG %s :%s\r\n", current, outputmsg); 
-        sendMsg(addr);
-	free(addr);
+      }else if(test_command(command, outputmsg, 100)==1){ 
+        if(msgchannel(twitchsock, currentChannel, outputmsg)==-1){
+	  perror("coulnd't send message");
+	  return NULL;
+	}
       }
       free(command);
     }
@@ -228,14 +239,15 @@ void* readerTHEThread(void* context){
 void* writerTHEThread(void* context){
   char payload[50];
   
-  sprintf(payload,"PRIVMSG %s :%s is here! HeyGuys\r\n", current, nick);
+  sprintf(payload,"%s is here! HeyGuys", nick);
 
-  if(sendMsg(payload)==-1){
+  if(msgchannel(twitchsock, currentChannel, payload)==-1){
+    perror("coulnd't send message");
     return NULL;
   }
   
   for (;;){
-    printf("[%s]> ", current);
+    printf("[%s]> ", currentChannel);
     char buffer[1024];
     //get streamer input
     fgets(buffer, 1024, stdin);
@@ -245,6 +257,29 @@ void* writerTHEThread(void* context){
   }
 }
 
+int setupSocket(){
+  struct connectionData conData;
+  twitchsock = socket(AF_INET, SOCK_STREAM, 0);
+  if(twitchsock == -1){
+    perror("couldn't connect to socket");
+    return -1;
+  }
+  struct hostent* host = gethostbyname("irc.chat.twitch.tv");
+  if(host == NULL){
+    perror("error connecting to twitch servers");
+    return -1;
 
+  }
+  //setup addresses
+  bzero(&twitchaddr, sizeof(twitchaddr));
+  twitchaddr.sin_family = AF_INET;
+  twitchaddr.sin_addr.s_addr = *(long *)host->h_addr_list[0];
+  twitchaddr.sin_port = htons(6667);
+  conData.sockfd = twitchsock;
+   if (connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0) {
+    perror("failed to connect to server\n");
+    return -1;
+  }
 
-
+   return 0;
+}
