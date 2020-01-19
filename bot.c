@@ -112,14 +112,12 @@ int analyseInput(char* strinput){
       printf("usage: say <message>\n");
       return 0;
     }
-    char buuf[50];
     char* commandBody;
 
     commandBody = strchr(strinput2,' ');
     commandBody++;
-    
-    sprintf(buuf, "PRIVMSG %s :%s\r\n", current, commandBody);
-    if(sendMsg(buuf)==-1){
+    if(msgchannel(twitchsock, current, commandBody)==-1){
+      perror("could't send message");
       return -1;
     }
     return 0;
