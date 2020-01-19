@@ -108,7 +108,6 @@ int main(int argc, char* argv[]){
 
 //analyses the user input (streamer side, not input from twitch channel)
 int analyseInput(char* strinput){
-  //int commandLen = strlen(strinput);
   sscanf(strinput, "%[^\n]", strinput);
   char* strinput2 = strdup(strinput);
   char* token = strtok(strinput, " ");
@@ -178,6 +177,21 @@ int analyseInput(char* strinput){
     }
     add_command(commandName, body);
     return 0;
+  }else if(strcmp(token, "join")==0){
+    char* newChannelName = strtok(NULL, " ");
+    char newChannel[1+strlen(newChannelName)];
+    char returnBuff[500];
+    char payload[50];
+    sprintf(newChannel, "#%s", newChannelName);
+    leavechannel(twitchsock, currentChannel, returnBuff, 200);
+    strcpy(currentChannel, newChannel);
+    printf("%s", returnBuff);
+    bzero(returnBuff, sizeof(returnBuff));
+    joinchannel(twitchsock, newChannel, returnBuff, 200);
+    printf("%s", returnBuff);
+    sprintf(payload,"%s is here! HeyGuys", nick);
+    msgchannel(twitchsock, currentChannel, payload);
+    return 0;
   }
   return -2;
 }
@@ -206,9 +220,6 @@ void* readerTHEThread(void* context){
       char* command = returnCommand(buff);
       if(strcmp(command, "!credits")==0){ 
 	//hard coded command
-	/*
-	char payload[100];
-	sprintf(payload,"PRIVMSG %s :This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n", current);*/
 	if(msgchannel(twitchsock,
 		      currentChannel,
 		      "This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n")==-1){

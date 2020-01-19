@@ -26,10 +26,13 @@ send a message to the currently selected channel
 quits the application
 - `[#channel]> addcmd <command> <command body>`
 
-adds command `<command>`. When it is typed in chat, the bot responds with `<command body>`
+adds command `<command>`. When it is typed in chat, the bot responds with `<command body>
 - `[#channel]> rmcmd <command>`
 
 removes command `<command>`
+- `[#channel]> join <channel>`
+
+leaves the currently active channel to move to new channel `<channel>`, sends a greeting same to the one sent on initial startup
 
 ## Chat Commands
 - by default the bot accepts the command `!credits` from twitch chat,
