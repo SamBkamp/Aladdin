@@ -59,7 +59,10 @@ int main(int argc, char* argv[]){
 
   
   char buff[500];
-  setupauth(twitchsock, password, nick, buff, sizeof(buff));
+  if(setupauth(twitchsock, password, nick, buff, sizeof(buff))==-1){
+    perror("fauled to authenticate");
+    return -1;
+  }
   printf("%s", buff);
   
   char channelName[20];
