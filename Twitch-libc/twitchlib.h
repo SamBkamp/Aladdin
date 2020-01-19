@@ -66,9 +66,11 @@ int leavechannel(int sockfd, const char* channel, char* output, int length){
 
 int sendrawpacket(int sockfd, char* payload){
   int payloadlen = strlen(payload);
+  /*
   if(payload[payloadlen] != '\n' || payload[payloadlen-1] != '\r'){
     strcat(payload, "\r\n");
   }
+  */
   if(write(sockfd, payload, strlen(payload))==-1){
     return -1;
   }
