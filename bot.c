@@ -62,11 +62,10 @@ int main(int argc, char* argv[]){
     printf("Warning: couldn't load commands\n");
   }
   
-  setupSocket(); //sets up address
-
+  twitchsock = twlibc_init(); //sets up address
   
   char buff[500];
-  if(setupauth(twitchsock, password, nick, buff, sizeof(buff))==-1){
+  if(twlibc_setupauth(twitchsock, password, nick, buff, sizeof(buff))==-1){
     perror("fauled to authenticate");
     return -1;
   }
@@ -77,7 +76,7 @@ int main(int argc, char* argv[]){
 
   bzero(buff, sizeof(buff));
   
-  if(joinchannel(twitchsock, channelName, buff, sizeof(buff))==-1){
+  if(twlibc_joinchannel(twitchsock, channelName, buff, sizeof(buff))==-1){
     perror("failed to write to socket");
     return -1;
   }
@@ -122,7 +121,7 @@ int analyseInput(char* strinput){
 
     commandBody = strchr(strinput2,' ');
     commandBody++;
-    if(msgchannel(twitchsock, currentChannel, commandBody)==-1){
+    if(twlibc_msgchannel(twitchsock, currentChannel, commandBody)==-1){
       perror("could't send message");
       return -1;
     }
@@ -183,14 +182,14 @@ int analyseInput(char* strinput){
     char returnBuff[500];
     char payload[50];
     sprintf(newChannel, "#%s", newChannelName);
-    leavechannel(twitchsock, currentChannel, returnBuff, 200);
+    twlibc_leavechannel(twitchsock, currentChannel, returnBuff, 200);
     strcpy(currentChannel, newChannel);
     printf("%s", returnBuff);
     bzero(returnBuff, sizeof(returnBuff));
-    joinchannel(twitchsock, newChannel, returnBuff, 200);
+    twlibc_joinchannel(twitchsock, newChannel, returnBuff, 200);
     printf("%s", returnBuff);
     sprintf(payload,"%s is here! HeyGuys", nick);
-    msgchannel(twitchsock, currentChannel, payload);
+    twlibc_msgchannel(twitchsock, currentChannel, payload);
     return 0;
   }
   return -2;
@@ -208,7 +207,7 @@ void* readerTHEThread(void* context){
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
 
       char* payload = "PONG :tmi.twitch.tv\r\n";
-      if(sendrawpacket(twitchsock, payload)==-1){
+      if(twlibc_sendrawpacket(twitchsock, payload)==-1){
 	return NULL;
       }
     }else {
@@ -220,7 +219,7 @@ void* readerTHEThread(void* context){
       char* command = returnCommand(buff);
       if(strcmp(command, "!credits")==0){ 
 	//hard coded command
-	if(msgchannel(twitchsock,
+	if(twlibc_msgchannel(twitchsock,
 		      currentChannel,
 		      "This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n")==-1){
 	  return NULL;
@@ -228,13 +227,13 @@ void* readerTHEThread(void* context){
       }else if(strcmp(command, "!vanish")==0){
 	char* payload = (char *)malloc(1024);
 	sprintf(payload, "/timeout %s 1", commandSender(buff));
-        if(msgchannel(twitchsock, currentChannel, payload)==-1){
+        if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
 	  perror("coulnd't send message");
 	  return NULL;
 	}
 	free(payload);
       }else if(test_command(command, outputmsg, 100)==1){ 
-        if(msgchannel(twitchsock, currentChannel, outputmsg)==-1){
+        if(twlibc_msgchannel(twitchsock, currentChannel, outputmsg)==-1){
 	  perror("coulnd't send message");
 	  return NULL;
 	}
@@ -252,7 +251,7 @@ void* writerTHEThread(void* context){
   
   sprintf(payload,"%s is here! HeyGuys", nick);
 
-  if(msgchannel(twitchsock, currentChannel, payload)==-1){
+  if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
     perror("coulnd't send message");
     return NULL;
   }
