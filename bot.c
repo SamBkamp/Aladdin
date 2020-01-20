@@ -82,7 +82,7 @@ int main(int argc, char* argv[]){
   }
   printf("%s", buff);
 
-  sprintf(currentChannel, "%s", channelName);
+  strcpy(currentChannel, channelName);
   
   pthread_t writerThread;
   pthread_t readerThread;
@@ -265,31 +265,4 @@ void* writerTHEThread(void* context){
       printf("unrecognised command\n");
     }
   }
-}
-
-int setupSocket(){
-  struct connectionData conData;
-  twitchsock = socket(AF_INET, SOCK_STREAM, 0);
-  if(twitchsock == -1){
-    perror("couldn't connect to socket");
-    return -1;
-  }
-  struct hostent* host = gethostbyname("irc.chat.twitch.tv");
-  if(host == NULL){
-    perror("error connecting to twitch servers");
-    return -1;
-
-  }
-  //setup addresses
-  bzero(&twitchaddr, sizeof(twitchaddr));
-  twitchaddr.sin_family = AF_INET;
-  twitchaddr.sin_addr.s_addr = *(long *)host->h_addr_list[0];
-  twitchaddr.sin_port = htons(6667);
-  conData.sockfd = twitchsock;
-   if (connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0) {
-    perror("failed to connect to server\n");
-    return -1;
-  }
-
-   return 0;
 }
