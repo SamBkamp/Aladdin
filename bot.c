@@ -82,7 +82,7 @@ int main(int argc, char* argv[]){
   }
   printf("%s", buff);
 
-  sprintf(currentChannel, "%s", channelName);
+  strcpy(currentChannel, channelName);
   
   pthread_t writerThread;
   pthread_t readerThread;
