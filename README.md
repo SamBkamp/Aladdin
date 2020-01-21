@@ -20,13 +20,13 @@ $ ./Aladdin
 ## Commands
 - `[#channel]> say <message>`
 
-send a message to the currently selected channel
+send a message to `channel`
 - `[#channel]> quit`
 
 quits the application
 - `[#channel]> addcmd <command> <command body>`
 
-adds command `<command>`. When it is typed in chat, the bot responds with `<command body>
+adds command `<command>`. When it is typed in chat, the bot responds with `<command body>`
 - `[#channel]> rmcmd <command>`
 
 removes command `<command>`
