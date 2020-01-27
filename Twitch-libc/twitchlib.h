@@ -6,4 +6,5 @@ int twlibc_sendrawpacket(int sockfd, char* payload);
 int twlibc_setupauth(int sockfd, const char* oauth, const char* nick, char* output, int length);
 char* twlibc_parseSender(char* message);
 int twlibc_init();
+int twlibc_whisper();
 #endif

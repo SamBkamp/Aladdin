@@ -122,3 +122,11 @@ char* twlibc_parseSender(char* message){
   return parsedName;
 }
 
+int twlibc_whisper(int sockfd, const char* user, const char* message, const char* channel){
+  char buffer[16 + strlen(channel) + strlen(user) + strlen(message)];
+  sprintf(buffer, "PRIVMSG %s :/w %s %s\r\n", channel, user, message);
+  if(write(sockfd, buffer, strlen(buffer))==-1){
+    return -1;
+  }
+  return 0 ;
+}
