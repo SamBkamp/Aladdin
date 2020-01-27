@@ -191,6 +191,18 @@ int analyseInput(char* strinput){
     sprintf(payload,"%s is here! HeyGuys", nick);
     twlibc_msgchannel(twitchsock, currentChannel, payload);
     return 0;
+  }else if(strcmp(token, "whisper")==0 || strcmp(token, "w")==0){
+    char* user = strtok(NULL, " ");
+    char* message = strchr(strinput2, ' ');
+    message = strchr(message++, ' ');
+    if(user==NULL || strtok(NULL, " ")==NULL){
+      printf("usage: whisper|w <user> <message>\n");
+      return -1;
+    }
+    if(twlibc_whisper(twitchsock, user, message, currentChannel)==-1){
+      perror("Coulnd't send whisper");
+    }
+    return 0;
   }
   return -2;
 }
