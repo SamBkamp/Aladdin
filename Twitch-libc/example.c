@@ -62,6 +62,10 @@ int main(){
   char* senderName = twlibc_parseSender(returnString);
   printf("parsed name is: %s\n", senderName);
   free(senderName);
+
+  if(twlibc_whisper(twitchsock, "Bkamp_", "test", "#bkamp_") == -1){
+    perror("FATAL: couldn't whisper");
+  }
   
   bzero(buffer, 1024);
   if(twlibc_leavechannel(twitchsock, "#bkamp_", buffer, 1024)==-1){
