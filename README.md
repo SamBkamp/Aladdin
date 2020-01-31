@@ -35,7 +35,7 @@ removes command `<command>`
 leaves the currently active channel to move to new channel `<channel>`, sends a greeting same to the one sent on initial startup
 - `[#channel]> w|whisper <user> <message>`
 
-whispers <message> to the user given by <user> 
+whispers `<message>` to the user given by `<user>` 
 
 ## Chat Commands
 - by default the bot accepts the command `!credits` from twitch chat,
