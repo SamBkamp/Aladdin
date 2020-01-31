@@ -33,13 +33,15 @@ int main(int argc, char* argv[]){
   struct connectionData conData;
 
   if(argc < 2){
-    printf("usage: Aladdin --join <channel name>\n");
+    printf("Copyright 2020 Sam Bonnekamp (sam@bonnekamp.net) under the GPLv3 license\n\n");
+    printf("Aladdin --<option> [channel name]\n\n Option can be either:\n - join\n - setup\n");
+    printf("if you join a channel you must supply the channel name you want to join\n");
     exit(0);
   }
   
   if (strcmp(argv[1], "--join")==0){
     if(argc < 3){
-      printf("usage: Aladdin --join <channel name>\n");
+      printf("no channel name supplied... exiting\n");
       exit(0);
     }
   }else if (strcmp(argv[1], "--setup")==0){
@@ -49,7 +51,9 @@ int main(int argc, char* argv[]){
     }
     exit(0);
   }else {
-    printf("usage: Aladdin --join <channel name>\n");
+    printf("Copyright 2020 Sam Bonnekamp (sam@bonnekamp.net) under the GPLv3 license\n\n");
+    printf("Aladdin --<option> [channel name]\n\n Option can be either:\n - join\n - setup\n");
+    printf("if you join a channel you must supply the channel name you want to join\n");
     exit(0);
   }
   
