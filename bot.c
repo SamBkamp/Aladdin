@@ -11,6 +11,7 @@
 #include "lib/cmdfile.h"
 #include "lib/parsers.c"
 #include "Twitch-libc/twitchlib.h"
+#include <ncurses.h>
 
 struct connectionData{
   int sockfd;
@@ -28,10 +29,16 @@ void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 int writeToFile(char* command, char* body);
 int setupSocket();
+void printToScreen(char* message, WINDOW* window);
+int windowHeight, windowWidth;
+WINDOW* mainwin;
+WINDOW* textWin;
+int lineIterator = 0;
+
 
 int main(int argc, char* argv[]){
   struct connectionData conData;
-
+  
   if(argc < 2){
     printf("Copyright 2020 Sam Bonnekamp (sam@bonnekamp.net) under the GPLv3 license\n\n");
     printf("Aladdin --<option> [channel name]\n\n Option can be either:\n - join\n - setup\n");
@@ -65,6 +72,14 @@ int main(int argc, char* argv[]){
   if(init()==-1){
     printf("Warning: couldn't load commands\n");
   }
+
+  mainwin = initscr();
+  noecho();
+  keypad(mainwin, TRUE);
+  getmaxyx(mainwin, windowHeight, windowWidth);
+
+  textWin = newwin(windowHeight-1, windowWidth, 0, 0);
+  scrollok(textWin, TRUE);
   
   twitchsock = twlibc_init(); //sets up address
   
@@ -73,7 +88,13 @@ int main(int argc, char* argv[]){
     perror("fauled to authenticate");
     return -1;
   }
-  printf("%s", buff);
+  
+  //sscanf(buff, "%[^\r\n]", buff);//temporary.. I hope
+  char* tokky = strtok(buff, "\r\n");
+  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
+    printToScreen(tokky, textWin);    
+  }
+
   
   char channelName[20];
   sprintf(channelName, "#%s", argv[2]);
@@ -84,8 +105,13 @@ int main(int argc, char* argv[]){
     perror("failed to write to socket");
     return -1;
   }
-  printf("%s", buff);
-
+  //printf("%s", buff);
+  tokky = strtok(buff, "\r\n");
+  
+  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
+    printToScreen(tokky, textWin);    
+  }
+  
   strcpy(currentChannel, channelName);
   
   pthread_t writerThread;
@@ -105,6 +131,7 @@ int main(int argc, char* argv[]){
   
   
   return 0;
+  endwin();
 }
 
 
@@ -139,7 +166,9 @@ int analyseInput(char* strinput){
     return 0;
   }else if(strncmp(token, "rmcmd", 5)==0){
     if(strlen(strinput2)<=6){ //checks for arguments
-      printf("rmcmd <command>   %s\n", strinput2);
+      char buffer[1024];
+      sprintf(buffer, "rmcmd <command>   %s\n", strinput2);
+      printToScreen(buffer, textWin);
       return 0;
     }
     char* commandName = strtok(NULL, " ");
@@ -150,12 +179,15 @@ int analyseInput(char* strinput){
     if(remove_command(commandName)==-1){
       return -1;
     }
-    printf("removed command '%s'\n", commandName);
+    char printBUffer[1024];
+    sprintf(printBUffer,"removed command '%s'", commandName);
+    printToScreen(printBUffer, textWin);
     return 0;
   }else if(strcmp(token, "addcmd")==0){
 
     if(strlen(strinput2)<=7){ //checks for arguments
-      printf("addcmd <command> <message>\n");
+      //printf("addcmd <command> <message>");
+      printToScreen("addcmd <command> <message>", textWin);
       return 0;
     }
     
@@ -227,9 +259,10 @@ void* readerTHEThread(void* context){
 	return NULL;
       }
     }else {
-      printf("\r%s", buff);
+      //printf("\r%s", buff);
+      printToScreen(buff, textWin);
       sleep(0.5);
-      printf("[%s]> ", currentChannel);
+      //printf("[%s]> ", currentChannel);
       fflush(stdout);
       
       char* command = returnCommand(buff);
@@ -273,12 +306,27 @@ void* writerTHEThread(void* context){
   }
   
   for (;;){
-    printf("[%s]> ", currentChannel);
     char buffer[1024];
+    sprintf(buffer,"[%s]> ", currentChannel);
+    printToScreen(buffer, textWin);
+    bzero(buffer, sizeof(buffer)); //recycled variable
     //get streamer input
     fgets(buffer, 1024, stdin);
     if(analyseInput(buffer)==-2){
       printf("unrecognised command\n");
     }
   }
+}
+
+
+void printToScreen(char* message, WINDOW* window){
+  if(lineIterator < windowHeight-1){
+    mvwaddstr(window, lineIterator, 0, message);
+    lineIterator++;
+    wrefresh(window);
+    return;
+  }
+  scroll(window);
+  mvwaddstr(window, lineIterator, 0, message);  
+  wrefresh(window);
 }
