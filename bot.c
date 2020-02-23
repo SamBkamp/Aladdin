@@ -259,7 +259,8 @@ void* readerTHEThread(void* context){
 	return NULL;
       }
     }else {
-      //printf("\r%s", buff);
+      //sprintf(buff, "[^\r\n]", buff);
+      buff[strlen(buff)-2] = 0;
       printToScreen(buff, textWin);
       sleep(0.5);
       //printf("[%s]> ", currentChannel);
