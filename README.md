@@ -3,7 +3,8 @@
 
 # **Aladdin**
 
-command line twitch bot written in c
+the CLI branch of a command line twitch bot written in c
+This is still underdevelopment, but this change is so large I decided to give it its own branch. This branch will be merged with master once its reached a usable alpha-state
 
 **Warning: this bot is not yet SSL encrypted, This means that your oauth key will be sent in plain text over the network. So, please don't use this bot on public networks until SSL is implemented.**
 
