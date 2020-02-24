@@ -33,6 +33,7 @@ void printToScreen(char* message, WINDOW* window);
 int windowHeight, windowWidth;
 WINDOW* mainwin;
 WINDOW* textWin;
+WINDOW* inputWin;
 int lineIterator = 0;
 
 
@@ -73,13 +74,19 @@ int main(int argc, char* argv[]){
     printf("Warning: couldn't load commands\n");
   }
 
+  //set up ncurses
+  
   mainwin = initscr();
   noecho();
+  start_color();
   keypad(mainwin, TRUE);
   getmaxyx(mainwin, windowHeight, windowWidth);
-
-  textWin = newwin(windowHeight-1, windowWidth, 0, 0);
+  
+  textWin = newwin(windowHeight-5, windowWidth-1, 0, 0);
+  inputWin = newwin(3, windowWidth-1, windowHeight-4, 0);
   scrollok(textWin, TRUE);
+  box(inputWin, '|', '-');
+  wrefresh(inputWin);
   
   twitchsock = twlibc_init(); //sets up address
   
@@ -224,6 +231,7 @@ int analyseInput(char* strinput){
     bzero(returnBuff, sizeof(returnBuff));
     twlibc_joinchannel(twitchsock, newChannel, returnBuff, 200);
     printf("%s", returnBuff);
+    sleep(1);
     sprintf(payload,"%s is here! HeyGuys", nick);
     twlibc_msgchannel(twitchsock, currentChannel, payload);
     return 0;
@@ -261,7 +269,9 @@ void* readerTHEThread(void* context){
     }else {
       //sprintf(buff, "[^\r\n]", buff);
       buff[strlen(buff)-2] = 0;
-      printToScreen(buff, textWin);
+      for (char* token = strtok(buff, "\r\n"); token != NULL; token = strtok(NULL, "\r\n")){
+	printToScreen(token, textWin);
+      }
       sleep(0.5);
       //printf("[%s]> ", currentChannel);
       fflush(stdout);
@@ -308,13 +318,10 @@ void* writerTHEThread(void* context){
   
   for (;;){
     char buffer[1024];
-    sprintf(buffer,"[%s]> ", currentChannel);
-    printToScreen(buffer, textWin);
-    bzero(buffer, sizeof(buffer)); //recycled variable
     //get streamer input
     fgets(buffer, 1024, stdin);
     if(analyseInput(buffer)==-2){
-      printf("unrecognised command\n");
+      printToScreen("unrecognised command", textWin);
     }
   }
 }
@@ -323,11 +330,16 @@ void* writerTHEThread(void* context){
 void printToScreen(char* message, WINDOW* window){
   if(lineIterator < windowHeight-1){
     mvwaddstr(window, lineIterator, 0, message);
+    mvwaddstr(mainwin, windowHeight, windowWidth, "> ");
     lineIterator++;
     wrefresh(window);
+    wrefresh(inputWin);
     return;
   }
   scroll(window);
-  mvwaddstr(window, lineIterator, 0, message);  
+  mvwaddstr(window, lineIterator, 0, message);
+  mvwaddstr(mainwin, windowHeight, windowWidth, "> ");
   wrefresh(window);
+  wrefresh(mainwin);
+  wmove(mainwin, windowHeight, windowWidth);
 }
