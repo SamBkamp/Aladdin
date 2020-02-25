@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netdb.h> //hostent
@@ -8,9 +9,9 @@
 #include <pthread.h>
 #include <signal.h>
 #include "lib/parseInfo.c"
-#include "lib/cmdfile.h"
 #include "lib/parsers.c"
 #include "Twitch-libc/twitchlib.h"
+#include <ncurses.h>
 
 struct connectionData{
   int sockfd;
@@ -28,10 +29,18 @@ void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 int writeToFile(char* command, char* body);
 int setupSocket();
+void printToScreen(char* message, WINDOW* window);
+int windowHeight, windowWidth;
+WINDOW* mainwin;
+WINDOW* textWin;
+WINDOW* inputWin;
+int lineIterator = -1;
+
+#include "lib/cmdfile.h" //its ugly, I know but please bear with me
 
 int main(int argc, char* argv[]){
   struct connectionData conData;
-
+  
   if(argc < 2){
     printf("Copyright 2020 Sam Bonnekamp (sam@bonnekamp.net) under the GPLv3 license\n\n");
     printf("Aladdin --<option> [channel name]\n\n Option can be either:\n - join\n - setup\n");
@@ -65,6 +74,19 @@ int main(int argc, char* argv[]){
   if(init()==-1){
     printf("Warning: couldn't load commands\n");
   }
+
+  //set up ncurses
+  
+  mainwin = initscr();
+  start_color();
+  keypad(mainwin, TRUE);
+  getmaxyx(mainwin, windowHeight, windowWidth);
+  
+  textWin = newwin(windowHeight-5, windowWidth-1, 0, 0);
+  inputWin = newwin(3, windowWidth-1, windowHeight-4, 0);
+  scrollok(textWin, TRUE);
+  box(inputWin, '|', '-');
+  wrefresh(inputWin);
   
   twitchsock = twlibc_init(); //sets up address
   
@@ -73,19 +95,31 @@ int main(int argc, char* argv[]){
     perror("fauled to authenticate");
     return -1;
   }
-  printf("%s", buff);
+  
+  //sscanf(buff, "%[^\r\n]", buff);//temporary.. I hope
+  char* tokky = strtok(buff, "\r\n");
+  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
+    printToScreen(tokky, textWin);    
+  }
+
   
   char channelName[20];
   sprintf(channelName, "#%s", argv[2]);
-
+  sprintf(currentChannel, "#%s", argv[2]);
+  
   bzero(buff, sizeof(buff));
   
   if(twlibc_joinchannel(twitchsock, channelName, buff, sizeof(buff))==-1){
     perror("failed to write to socket");
     return -1;
   }
-  printf("%s", buff);
-
+  //printf("%s", buff);
+  tokky = strtok(buff, "\r\n");
+  
+  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
+    printToScreen(tokky, textWin);    
+  }
+  
   strcpy(currentChannel, channelName);
   
   pthread_t writerThread;
@@ -105,6 +139,7 @@ int main(int argc, char* argv[]){
   
   
   return 0;
+  endwin();
 }
 
 
@@ -135,11 +170,13 @@ int analyseInput(char* strinput){
     pthread_kill(connData->writerThread, SIGTERM);
     pthread_kill(connData->readerThread, SIGTERM);
   }else if(strcmp(token, "ls")==0){
-    list_bot_commands();
+    list_bot_commands(textWin);
     return 0;
   }else if(strncmp(token, "rmcmd", 5)==0){
     if(strlen(strinput2)<=6){ //checks for arguments
-      printf("rmcmd <command>   %s\n", strinput2);
+      char buffer[1024];
+      sprintf(buffer, "rmcmd <command>   %s\n", strinput2);
+      printToScreen(buffer, textWin);
       return 0;
     }
     char* commandName = strtok(NULL, " ");
@@ -150,12 +187,15 @@ int analyseInput(char* strinput){
     if(remove_command(commandName)==-1){
       return -1;
     }
-    printf("removed command '%s'\n", commandName);
+    char printBUffer[1024];
+    sprintf(printBUffer,"removed command '%s'", commandName);
+    printToScreen(printBUffer, textWin);
     return 0;
   }else if(strcmp(token, "addcmd")==0){
 
     if(strlen(strinput2)<=7){ //checks for arguments
-      printf("addcmd <command> <message>\n");
+      //printf("addcmd <command> <message>");
+      printToScreen("addcmd <command> <message>", textWin);
       return 0;
     }
     
@@ -192,6 +232,7 @@ int analyseInput(char* strinput){
     bzero(returnBuff, sizeof(returnBuff));
     twlibc_joinchannel(twitchsock, newChannel, returnBuff, 200);
     printf("%s", returnBuff);
+    sleep(1);
     sprintf(payload,"%s is here! HeyGuys", nick);
     twlibc_msgchannel(twitchsock, currentChannel, payload);
     return 0;
@@ -227,9 +268,13 @@ void* readerTHEThread(void* context){
 	return NULL;
       }
     }else {
-      printf("\r%s", buff);
+      //sprintf(buff, "[^\r\n]", buff);
+      buff[strlen(buff)-2] = 0;
+      for (char* token = strtok(buff, "\r\n"); token != NULL; token = strtok(NULL, "\r\n")){
+	printToScreen(token, textWin);
+      }
       sleep(0.5);
-      printf("[%s]> ", currentChannel);
+      //printf("[%s]> ", currentChannel);
       fflush(stdout);
       
       char* command = returnCommand(buff);
@@ -273,12 +318,32 @@ void* writerTHEThread(void* context){
   }
   
   for (;;){
-    printf("[%s]> ", currentChannel);
     char buffer[1024];
     //get streamer input
-    fgets(buffer, 1024, stdin);
+    //fgets(buffer, 1024, stdin);
+    int offset = strlen(currentChannel)  + 5;
+    mvwgetstr(inputWin, 1, offset, buffer);
+    wmove(inputWin, 1, offset);
+    wclrtoeol(inputWin);
     if(analyseInput(buffer)==-2){
-      printf("unrecognised command\n");
+      printToScreen("unrecognised command", textWin);
     }
   }
+}
+
+
+void printToScreen(char* message, WINDOW* window){
+  char channelNameBuff[500];
+  sprintf(channelNameBuff, "[%s]> ", currentChannel);
+  
+  if(lineIterator < windowHeight-6){
+    lineIterator++;
+    goto noscroll;
+  }
+  scroll(window);
+ noscroll:
+  mvwaddstr(window, lineIterator, 0, message);
+  mvwaddstr(inputWin, 1, 1, channelNameBuff);
+  wrefresh(window);
+  wrefresh(inputWin);
 }
