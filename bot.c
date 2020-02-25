@@ -9,7 +9,6 @@
 #include <pthread.h>
 #include <signal.h>
 #include "lib/parseInfo.c"
-#include "lib/cmdfile.h"
 #include "lib/parsers.c"
 #include "Twitch-libc/twitchlib.h"
 #include <ncurses.h>
@@ -37,6 +36,7 @@ WINDOW* textWin;
 WINDOW* inputWin;
 int lineIterator = 0;
 
+#include "lib/cmdfile.h" //its ugly, I know but please bear with me
 
 int main(int argc, char* argv[]){
   struct connectionData conData;
@@ -106,7 +106,8 @@ int main(int argc, char* argv[]){
   
   char channelName[20];
   sprintf(channelName, "#%s", argv[2]);
-
+  sprintf(currentChannel, "#%s", argv[2]);
+  
   bzero(buff, sizeof(buff));
   
   if(twlibc_joinchannel(twitchsock, channelName, buff, sizeof(buff))==-1){
@@ -320,7 +321,9 @@ void* writerTHEThread(void* context){
   for (;;){
     char buffer[1024];
     //get streamer input
-    fgets(buffer, 1024, stdin);
+    //fgets(buffer, 1024, stdin);
+    int offset = strlen(currentChannel)  + 5;
+    mvwgetstr(inputWin, 1, offset, buffer);
     if(analyseInput(buffer)==-2){
       printToScreen("unrecognised command", textWin);
     }
@@ -332,7 +335,7 @@ void printToScreen(char* message, WINDOW* window){
   char channelNameBuff[500];
   sprintf(channelNameBuff, "[%s]> ", currentChannel);
   
-  if(lineIterator < windowHeight-1){
+  if(lineIterator < windowHeight-6){
     mvwaddstr(window, lineIterator, 0, message);
     mvwaddstr(inputWin, 1, 1, channelNameBuff);
     lineIterator++;
