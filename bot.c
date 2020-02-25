@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netdb.h> //hostent
@@ -328,9 +329,12 @@ void* writerTHEThread(void* context){
 
 
 void printToScreen(char* message, WINDOW* window){
+  char channelNameBuff[500];
+  sprintf(channelNameBuff, "[%s]> ", currentChannel);
+  
   if(lineIterator < windowHeight-1){
     mvwaddstr(window, lineIterator, 0, message);
-    mvwaddstr(mainwin, windowHeight, windowWidth, "> ");
+    mvwaddstr(inputWin, 1, 1, channelNameBuff);
     lineIterator++;
     wrefresh(window);
     wrefresh(inputWin);
@@ -338,8 +342,8 @@ void printToScreen(char* message, WINDOW* window){
   }
   scroll(window);
   mvwaddstr(window, lineIterator, 0, message);
-  mvwaddstr(mainwin, windowHeight, windowWidth, "> ");
+  mvwaddstr(inputWin, 1, 1, channelNameBuff);
   wrefresh(window);
-  wrefresh(mainwin);
+  wrefresh(inputWin);
   wmove(mainwin, windowHeight, windowWidth);
 }
