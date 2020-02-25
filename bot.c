@@ -335,17 +335,13 @@ void printToScreen(char* message, WINDOW* window){
   sprintf(channelNameBuff, "[%s]> ", currentChannel);
   
   if(lineIterator < windowHeight-6){
-    mvwaddstr(window, lineIterator, 0, message);
-    mvwaddstr(inputWin, 1, 1, channelNameBuff);
     lineIterator++;
-    wrefresh(window);
-    wrefresh(inputWin);
-    return;
+    goto noscroll;
   }
   scroll(window);
+ noscroll:
   mvwaddstr(window, lineIterator, 0, message);
   mvwaddstr(inputWin, 1, 1, channelNameBuff);
   wrefresh(window);
   wrefresh(inputWin);
-  wmove(mainwin, windowHeight, windowWidth);
 }
