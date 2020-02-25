@@ -78,7 +78,6 @@ int main(int argc, char* argv[]){
   //set up ncurses
   
   mainwin = initscr();
-  noecho();
   start_color();
   keypad(mainwin, TRUE);
   getmaxyx(mainwin, windowHeight, windowWidth);
