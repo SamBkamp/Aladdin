@@ -34,7 +34,7 @@ int windowHeight, windowWidth;
 WINDOW* mainwin;
 WINDOW* textWin;
 WINDOW* inputWin;
-int lineIterator = 0;
+int lineIterator = -1;
 
 #include "lib/cmdfile.h" //its ugly, I know but please bear with me
 
@@ -323,6 +323,8 @@ void* writerTHEThread(void* context){
     //fgets(buffer, 1024, stdin);
     int offset = strlen(currentChannel)  + 5;
     mvwgetstr(inputWin, 1, offset, buffer);
+    wmove(inputWin, 1, offset);
+    wclrtoeol(inputWin);
     if(analyseInput(buffer)==-2){
       printToScreen("unrecognised command", textWin);
     }
