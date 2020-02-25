@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "cmdfile.h"
-
+#include <ncurses.h>
 
 typedef struct {
     char *cmd;
@@ -109,12 +109,16 @@ int add_command(char* add_cmd, char* add_msg){
   return 0;
 }
 
-void list_bot_commands(){ //for debugging
+void list_bot_commands(WINDOW* window){ //for debugging
   int i;
   Commands* tmp = allCommands;
-  printf("total commands: %d\n", cmdlen);
+  char buffer[1024];
+  char intBuffer[20];
+  sprintf(intBuffer, "total commands: %d", cmdlen);
+  printToScreen(intBuffer, window);
   for(i=0; i < cmdlen; i++, tmp++){
-    printf("%s --> %s\n", tmp->cmd, tmp->msg);
+    sprintf(buffer, "%s --> %s", tmp->cmd, tmp->msg);
+    printToScreen(buffer, window);
   }
 }
 

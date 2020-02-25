@@ -170,7 +170,7 @@ int analyseInput(char* strinput){
     pthread_kill(connData->writerThread, SIGTERM);
     pthread_kill(connData->readerThread, SIGTERM);
   }else if(strcmp(token, "ls")==0){
-    list_bot_commands();
+    list_bot_commands(textWin);
     return 0;
   }else if(strncmp(token, "rmcmd", 5)==0){
     if(strlen(strinput2)<=6){ //checks for arguments
