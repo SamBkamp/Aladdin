@@ -30,6 +30,7 @@ void* writerTHEThread(void* context);
 int writeToFile(char* command, char* body);
 int setupSocket();
 void printToScreen(char* message, WINDOW* window);
+void printFormatted(char* message, WINDOW* window);
 int windowHeight, windowWidth;
 WINDOW* mainwin;
 WINDOW* textWin;
@@ -95,12 +96,7 @@ int main(int argc, char* argv[]){
     perror("fauled to authenticate");
     return -1;
   }
-  
-  //sscanf(buff, "%[^\r\n]", buff);//temporary.. I hope
-  char* tokky = strtok(buff, "\r\n");
-  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
-    printToScreen(tokky, textWin);    
-  }
+  printFormatted(buff, textWin);
 
   
   char channelName[20];
@@ -113,12 +109,8 @@ int main(int argc, char* argv[]){
     perror("failed to write to socket");
     return -1;
   }
-  //printf("%s", buff);
-  tokky = strtok(buff, "\r\n");
   
-  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
-    printToScreen(tokky, textWin);    
-  }
+  printFormatted(buff, textWin);
   
   strcpy(currentChannel, channelName);
   
@@ -194,20 +186,21 @@ int analyseInput(char* strinput){
   }else if(strcmp(token, "addcmd")==0){
 
     if(strlen(strinput2)<=7){ //checks for arguments
-      //printf("addcmd <command> <message>");
       printToScreen("addcmd <command> <message>", textWin);
       return 0;
     }
     
     char* commandName = strtok(NULL, " ");
     if (strcmp(commandName, "!credits")==0 || strcmp(commandName, "!vanish")==0){
-      printf("Error: can't override command '%s'\n", commandName);
+      printToScreen("Can't override that command", textWin);
       return 0;
     } 
     if(test_command(commandName, NULL, 1)==1){
-      printf("Error: command '%s' already exists\n", commandName);
+      printToScreen("command already exists", textWin);
       return 0;
     }
+
+    
 
     char* body = strchr(strinput2, ' ');
     body++;
@@ -219,6 +212,9 @@ int analyseInput(char* strinput){
       return 0;
     }
     add_command(commandName, body);
+    char namebuff[strlen(commandName) + strlen("added command ")];
+    sprintf(namebuff, "added command %s", commandName);
+    printToScreen(namebuff, textWin);
     return 0;
   }else if(strcmp(token, "join")==0){
     char* newChannelName = strtok(NULL, " ");
@@ -228,10 +224,10 @@ int analyseInput(char* strinput){
     sprintf(newChannel, "#%s", newChannelName);
     twlibc_leavechannel(twitchsock, currentChannel, returnBuff, 200);
     strcpy(currentChannel, newChannel);
-    printf("%s", returnBuff);
+    printFormatted(returnBuff, textWin);
     bzero(returnBuff, sizeof(returnBuff));
     twlibc_joinchannel(twitchsock, newChannel, returnBuff, 200);
-    printf("%s", returnBuff);
+    printFormatted(returnBuff, textWin);
     sleep(1);
     sprintf(payload,"%s is here! HeyGuys", nick);
     twlibc_msgchannel(twitchsock, currentChannel, payload);
@@ -346,4 +342,10 @@ void printToScreen(char* message, WINDOW* window){
   mvwaddstr(inputWin, 1, 1, channelNameBuff);
   wrefresh(window);
   wrefresh(inputWin);
+}
+
+void printFormatted(char* message, WINDOW* window){ //helper function that deals with strings ending in \r\n's, such as youd get from twitch irc
+  for (char* tokky = strtok(message, "\r\n"); tokky != NULL; tokky = strtok(NULL, "\r\n")){
+    printToScreen(tokky, window);    
+  }
 }
