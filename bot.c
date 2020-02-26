@@ -30,6 +30,7 @@ void* writerTHEThread(void* context);
 int writeToFile(char* command, char* body);
 int setupSocket();
 void printToScreen(char* message, WINDOW* window);
+void printFormatted(char* message, WINDOW* window);
 int windowHeight, windowWidth;
 WINDOW* mainwin;
 WINDOW* textWin;
@@ -95,12 +96,7 @@ int main(int argc, char* argv[]){
     perror("fauled to authenticate");
     return -1;
   }
-  
-  //sscanf(buff, "%[^\r\n]", buff);//temporary.. I hope
-  char* tokky = strtok(buff, "\r\n");
-  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
-    printToScreen(tokky, textWin);    
-  }
+  printFormatted(buff, textWin);
 
   
   char channelName[20];
@@ -113,12 +109,8 @@ int main(int argc, char* argv[]){
     perror("failed to write to socket");
     return -1;
   }
-  //printf("%s", buff);
-  tokky = strtok(buff, "\r\n");
   
-  for (tokky; tokky != NULL; tokky = strtok(NULL, "\r\n")){
-    printToScreen(tokky, textWin);    
-  }
+  printFormatted(buff, textWin);
   
   strcpy(currentChannel, channelName);
   
@@ -232,10 +224,10 @@ int analyseInput(char* strinput){
     sprintf(newChannel, "#%s", newChannelName);
     twlibc_leavechannel(twitchsock, currentChannel, returnBuff, 200);
     strcpy(currentChannel, newChannel);
-    printf("%s", returnBuff);
+    printFormatted(returnBuff, textWin);
     bzero(returnBuff, sizeof(returnBuff));
     twlibc_joinchannel(twitchsock, newChannel, returnBuff, 200);
-    printf("%s", returnBuff);
+    printFormatted(returnBuff, textWin);
     sleep(1);
     sprintf(payload,"%s is here! HeyGuys", nick);
     twlibc_msgchannel(twitchsock, currentChannel, payload);
@@ -350,4 +342,10 @@ void printToScreen(char* message, WINDOW* window){
   mvwaddstr(inputWin, 1, 1, channelNameBuff);
   wrefresh(window);
   wrefresh(inputWin);
+}
+
+void printFormatted(char* message, WINDOW* window){ //helper function that deals with strings ending in \r\n's, such as youd get from twitch irc
+  for (char* tokky = strtok(message, "\r\n"); tokky != NULL; tokky = strtok(NULL, "\r\n")){
+    printToScreen(tokky, window);    
+  }
 }
