@@ -194,20 +194,21 @@ int analyseInput(char* strinput){
   }else if(strcmp(token, "addcmd")==0){
 
     if(strlen(strinput2)<=7){ //checks for arguments
-      //printf("addcmd <command> <message>");
       printToScreen("addcmd <command> <message>", textWin);
       return 0;
     }
     
     char* commandName = strtok(NULL, " ");
     if (strcmp(commandName, "!credits")==0 || strcmp(commandName, "!vanish")==0){
-      printf("Error: can't override command '%s'\n", commandName);
+      printToScreen("Can't override that command", textWin);
       return 0;
     } 
     if(test_command(commandName, NULL, 1)==1){
-      printf("Error: command '%s' already exists\n", commandName);
+      printToScreen("command already exists", textWin);
       return 0;
     }
+
+    
 
     char* body = strchr(strinput2, ' ');
     body++;
@@ -219,6 +220,9 @@ int analyseInput(char* strinput){
       return 0;
     }
     add_command(commandName, body);
+    char namebuff[strlen(commandName) + strlen("added command ")];
+    sprintf(namebuff, "added command %s", commandName);
+    printToScreen(namebuff, textWin);
     return 0;
   }else if(strcmp(token, "join")==0){
     char* newChannelName = strtok(NULL, " ");
