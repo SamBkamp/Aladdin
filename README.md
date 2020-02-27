@@ -3,9 +3,12 @@
 
 # **Aladdin**
 
-a CLI twitch bot written in c
+a CLI twitch bot written in c. This bot is a way for you to interface with your twitch chat and also have chat commands and ban lists, all packed neatly into a single executable.
 
 **Warning: this bot is not yet SSL encrypted, This means that your oauth key will be sent in plain text over the network. So, please don't use this bot on public networks until SSL is implemented.**
+
+## Features
+This bot has two main features; Chat commands and ban words. The chat commands are a way for you as a streamer to program the bot to respond to twitch chat with automated messages, see the Commands section for more. The other feature is the ban words, this is a way for you to create a list that, if anyone says these words in your twitch chat, the bot will automatically time them out for 60 seconds. See more at the Commands section.  
 
 ## Quick Start
 ```
@@ -28,6 +31,9 @@ send a message to `channel`
 - `[#channel]> quit`
 
 quits the application
+- `[#channel]> ls`
+
+lists all the current active commands
 - `[#channel]> addcmd <command> <command body>`
 
 adds command `<command>`. When it is typed in chat, the bot responds with `<command body>`
@@ -40,7 +46,15 @@ leaves the currently active channel to move to new channel `<channel>`, sends a 
 - `[#channel]> w|whisper <user> <message>`
 
 whispers `<message>` to the user given by `<user>` 
+- `[#channel]> ld`
 
+lists the current active ban words
+- `[#channel]> addbw <ban word>`
+
+adds `<ban word>` to current active ban words
+- `[#channel]> rmbw <ban word>`
+
+removes `<ban word>` from list of banwords
 ## Chat Commands
 - by default the bot accepts the command `!credits` from twitch chat,
 You can add commands to the bot by using the `addcmd` function as mentioned in the Commands section.
