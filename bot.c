@@ -244,9 +244,14 @@ int analyseInput(char* strinput){
       printToScreen("addbw <ban word>", textWin);
       return 0;
     }
-    
     char* body = strchr(strinput, ' ');
     body++;
+    
+    if(banlist_test_command(body) == 1){
+      printToScreen("This banword already exists", textWin);
+      return 0;
+    }
+    
     banlist_add_command(body);
     printToScreen("ban word added", textWin);
     return 0;

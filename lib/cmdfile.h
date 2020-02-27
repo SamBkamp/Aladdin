@@ -1,7 +1,7 @@
 int init();
 int banlist_init();
 int test_command(const char *test_cmd, char *outputMsg, int maxOutputLen);
-int banlist_test_command(const char *test_cmd, char *outputMsg, int maxOutputLen);
+int banlist_test_command(const char *test_bw);
 int finish();
 int banlist_finish();
 int remove_command(char* remove_cmd);

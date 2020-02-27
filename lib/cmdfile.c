@@ -110,14 +110,11 @@ int test_command(const char *test_cmd, char *outputMsg, int maxOutputLen) {
 }
 
 
-int banlist_test_command(const char *test_cmd, char *outputMsg, int maxOutputLen) {
+int banlist_test_command(const char *test_bw) {
   int i;
-  Commands *tmp = allCommands;
-  for(i = 0; i < cmdlen; i++, tmp++) {
-    if (strcmp(test_cmd,tmp->cmd) == 0) {
-      if(outputMsg != NULL){
-	strncpy(outputMsg, tmp->msg, maxOutputLen);
-      }
+  banwords *tmp = allBanWords;
+  for(i = 0; i < banlen; i++, tmp++) {
+    if (strcmp(test_bw,tmp->word) == 0) {
       return 1;
     }
     
