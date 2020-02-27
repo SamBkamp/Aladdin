@@ -40,6 +40,7 @@ whispers `<message>` to the user given by `<user>`
 ## Chat Commands
 - by default the bot accepts the command `!credits` from twitch chat,
 You can add commands to the bot by using the `addcmd` function as mentioned in the Commands section.
+- The bot also ships with the !vanish command. This times the calling user out for 1 second, which removes their last couple of messages. This doesn't work if the invoking user has mod previliges 
 
 
 ## Support
