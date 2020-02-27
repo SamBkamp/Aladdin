@@ -9,4 +9,4 @@ int banlist_remove_command(char* remove_cmd);
 void list_bot_commands();
 void list_ban_list();
 int add_command(char* add_cmd, char* add_msg);
-int banlist_add_command(char* add_cmd, char* add_msg);
+int banlist_add_command(char* banword);

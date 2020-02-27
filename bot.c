@@ -152,18 +152,18 @@ int main(int argc, char* argv[]){
 //analyses the user input (streamer side, not input from twitch channel)
 int analyseInput(char* strinput){
   sscanf(strinput, "%[^\n]", strinput);
-  char* strinput2 = strdup(strinput);
-  char* token = strtok(strinput, " ");
+  char* strinput_raw = strdup(strinput);
+  char* token = strtok(strinput_raw, " ");
   
   if(strcmp(token, "say")==0){
 
-    if(strlen(strinput2) < 5){
+    if(strlen(strinput) < 5){
       printf("usage: say <message>\n");
       return 0;
     }
     char* commandBody;
 
-    commandBody = strchr(strinput2,' ');
+    commandBody = strchr(strinput,' ');
     commandBody++;
     if(twlibc_msgchannel(twitchsock, currentChannel, commandBody)==-1){
       perror("could't send message");
@@ -179,9 +179,9 @@ int analyseInput(char* strinput){
     list_ban_list(textWin);
     return 0;
   }else if(strncmp(token, "rmcmd", 5)==0){
-    if(strlen(strinput2)<=6){ //checks for arguments
+    if(strlen(strinput)<=6){ //checks for arguments
       char buffer[1024];
-      sprintf(buffer, "rmcmd <command>   %s\n", strinput2);
+      sprintf(buffer, "rmcmd <command>   %s\n", strinput);
       printToScreen(buffer, textWin);
       return 0;
     }
@@ -197,9 +197,20 @@ int analyseInput(char* strinput){
     sprintf(printBUffer,"removed command '%s'", commandName);
     printToScreen(printBUffer, textWin);
     return 0;
+    
+  }else if(strcmp(token, "rmbw")==0){
+    if(strlen(strinput) <= 5){
+      printToScreen("rmbw <command>", textWin);
+      return 0;
+    }
+    char* body = strchr(strinput, ' ');
+    body++;
+    banlist_remove_command(body);
+    printToScreen("ban word removed", textWin);
+    return 0;
   }else if(strcmp(token, "addcmd")==0){
 
-    if(strlen(strinput2)<=7){ //checks for arguments
+    if(strlen(strinput)<=7){ //checks for arguments
       printToScreen("addcmd <command> <message>", textWin);
       return 0;
     }
@@ -214,9 +225,7 @@ int analyseInput(char* strinput){
       return 0;
     }
 
-    
-
-    char* body = strchr(strinput2, ' ');
+    char* body = strchr(strinput, ' ');
     body++;
     body = strchr(body, ' ');
     body++; //all of this just gets the pointer to string after the first two spaces
@@ -230,11 +239,23 @@ int analyseInput(char* strinput){
     sprintf(namebuff, "added command %s", commandName);
     printToScreen(namebuff, textWin);
     return 0;
+  }else if(strcmp(token, "addbw")==0){
+    if(strlen(strinput) <= 6){
+      printToScreen("addbw <ban word>", textWin);
+      return 0;
+    }
+    
+    char* body = strchr(strinput, ' ');
+    body++;
+    banlist_add_command(body);
+    printToScreen("ban word added", textWin);
+    return 0;
   }else if(strcmp(token, "join")==0){
     char* newChannelName = strtok(NULL, " ");
     char newChannel[1+strlen(newChannelName)];
     char returnBuff[500];
     char payload[50];
+
     sprintf(newChannel, "#%s", newChannelName);
     twlibc_leavechannel(twitchsock, currentChannel, returnBuff, 200);
     strcpy(currentChannel, newChannel);
@@ -245,10 +266,11 @@ int analyseInput(char* strinput){
     sleep(1);
     sprintf(payload,"%s is here! HeyGuys", nick);
     twlibc_msgchannel(twitchsock, currentChannel, payload);
+
     return 0;
   }else if(strcmp(token, "whisper")==0 || strcmp(token, "w")==0){
     char* user = strtok(NULL, " ");
-    char* message = strchr(strinput2, ' ');
+    char* message = strchr(strinput, ' ');
     message = strchr(message++, ' ');
     if(user==NULL || strtok(NULL, " ")==NULL){
       printf("usage: whisper|w <user> <message>\n");

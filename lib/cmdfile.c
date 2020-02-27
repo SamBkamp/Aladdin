@@ -73,10 +73,6 @@ int banlist_init() {
         return -1;
 
     char buffer[MAX_LEN + 1];
-
-    //count number of lines in file
-    while(fgets(buffer, MAX_LEN, fp) != NULL)
-        lines++;
     
     //reset position in file to beginning
     fseek(fp, 0, SEEK_SET);
@@ -153,25 +149,23 @@ int remove_command(char* remove_cmd){
 }
 
 
-int banlist_remove_command(char* remove_cmd){
+int banlist_remove_command(char* remove_bw){
   int i;
-  Commands* tmp = allCommands;
-  Commands* buff;
-  for(i=0; i < cmdlen; i++, tmp++){
-    if (strcmp(remove_cmd,tmp->cmd) == 0) {
+  banwords* tmp = allBanWords;
+  banwords* buff;
+  for(i=0; i < banlen; i++, tmp++){
+    if (strcmp(remove_bw,tmp->word) == 0) {
       buff = tmp;
       break;
     }
   }
-  tmp++;
+  tmp++; //tmp is one ahead of buff
   for(int j = i; j < cmdlen; j++, tmp++, buff++){
-    buff->cmd = tmp->cmd;
-    buff->msg = tmp->msg;
+    buff->word = tmp->word;
   }
 
-  lines--;
-  allCommands = (Commands *)realloc(allCommands, sizeof(Commands)*lines);
-  cmdlen--;
+  allBanWords = (banwords *)realloc(allBanWords, sizeof(banwords)*lines);
+  banlen--;
   return 0;
 }
 
@@ -190,16 +184,14 @@ int add_command(char* add_cmd, char* add_msg){
 }
 
 
-int banlist_add_command(char* add_cmd, char* add_msg){
+int banlist_add_command(char* banword){
   lines++;
-  Commands* tmp = (Commands *)realloc(allCommands, sizeof(Commands)*lines);
-  Commands* lastcmd = (tmp + cmdlen);
-  lastcmd->cmd = (char *)malloc(strlen(add_cmd));
-  lastcmd->msg = (char *)malloc(strlen(add_msg));
-  strcpy(lastcmd->cmd, add_cmd);
-  strcpy(lastcmd->msg, add_msg);
-  allCommands = tmp;
-  cmdlen++;
+  banwords* tmp = (banwords *)realloc(allBanWords, sizeof(banwords)*lines);
+  banwords* lastcmd = (tmp + banlen);
+  lastcmd->word = (char *)malloc(strlen(banword));
+  strcpy(lastcmd->word, banword);
+  allBanWords = tmp;
+  banlen++;
   return 0;
 }
 
