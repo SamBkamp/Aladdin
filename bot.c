@@ -67,6 +67,8 @@ int main(int argc, char* argv[]){
     printf("if you join a channel you must supply the channel name you want to join\n");
     exit(0);
   }
+
+  //dealing with data files
   
   if (parseInfo()==-1){
     printf("run with --setup to add twitch auth\n");
@@ -76,6 +78,12 @@ int main(int argc, char* argv[]){
   if(init()==-1){
     printf("Warning: couldn't load commands\n");
   }
+  
+  if(banlist_init()==-1){
+    printf("Warning: couldn't load banlist\n");
+  }
+
+ 
 
   //signal handler
 
@@ -166,6 +174,9 @@ int analyseInput(char* strinput){
     close_cycle();
   }else if(strcmp(token, "ls")==0){
     list_bot_commands(textWin);
+    return 0;
+  }else if(strcmp(token, "ld")==0){
+    list_ban_list(textWin);
     return 0;
   }else if(strncmp(token, "rmcmd", 5)==0){
     if(strlen(strinput2)<=6){ //checks for arguments
