@@ -415,6 +415,7 @@ void closeHandler(int signal){
 void close_cycle(){
   endwin();
   finish();
+  banlist_finish();
   pthread_kill(connData->writerThread, SIGTERM);
   pthread_kill(connData->readerThread, SIGTERM);
 }

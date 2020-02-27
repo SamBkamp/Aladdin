@@ -19,6 +19,7 @@ int cmdlen;
 int banlen;
 
 int lines = 0;
+int banLines = 0;
 
 #define cmdFile "commands.csv"
 #define MAX_LEN 4096
@@ -74,9 +75,13 @@ int banlist_init() {
 
     char buffer[MAX_LEN + 1];
     
+    while(fgets(buffer, MAX_LEN, fp) != NULL)
+        banLines++;
+    
+    
     //reset position in file to beginning
     fseek(fp, 0, SEEK_SET);
-    allBanWords = (banwords *)malloc(sizeof(banwords)*lines);
+    allBanWords = (banwords *)malloc(sizeof(banwords)*banLines);
     banwords *tmp = allBanWords;
     banlen = 0;
     while(fgets(buffer, MAX_LEN, fp) != NULL) {
@@ -161,7 +166,8 @@ int banlist_remove_command(char* remove_bw){
     buff->word = tmp->word;
   }
 
-  allBanWords = (banwords *)realloc(allBanWords, sizeof(banwords)*lines);
+  banLines--;
+  allBanWords = (banwords *)realloc(allBanWords, sizeof(banwords)*banLines);
   banlen--;
   return 0;
 }
@@ -182,8 +188,8 @@ int add_command(char* add_cmd, char* add_msg){
 
 
 int banlist_add_command(char* banword){
-  lines++;
-  banwords* tmp = (banwords *)realloc(allBanWords, sizeof(banwords)*lines);
+  banLines++;
+  banwords* tmp = (banwords *)realloc(allBanWords, sizeof(banwords)*banLines);
   banwords* lastcmd = (tmp + banlen);
   lastcmd->word = (char *)malloc(strlen(banword));
   strcpy(lastcmd->word, banword);
@@ -244,20 +250,19 @@ int finish() {
 
 int banlist_finish() {
   int i;
-  FILE* fp = fopen("commands.csv", "w");
+  FILE* fp = fopen("banlist.csv", "w");
   if(fp==NULL){
     printf("couldn't open commands.csv\n");
     return -1;
   }
-  for(i = 0; i < cmdlen; i++) {
-    Commands *curr = (allCommands + i);
-    if(fprintf(fp, "%s,%s\n", curr->cmd, curr->msg) < 0){
-      printf("failed to save command `%s`\n", curr->cmd);
+  for(i = 0; i < banlen; i++) {
+    banwords *curr = (allBanWords + i);
+    if(fprintf(fp, "%s\n", curr->word) < 0){
+      printf("failed to save command `%s`\n", curr->word);
     }
-    free(curr->cmd);
-    free(curr->msg);
+    free(curr->word);
   }
-  free(allCommands);
+  free(allBanWords);
   fclose(fp);
   return 0;
 }
