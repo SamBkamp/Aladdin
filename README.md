@@ -13,7 +13,7 @@ $ make
 $ ./Aladdin
 ```
 
-- or -
+-- or --
 
 you can download and run the precompiled binary on the release page
 ## Usage
