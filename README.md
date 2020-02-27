@@ -12,6 +12,10 @@ a CLI twitch bot written in c
 $ make
 $ ./Aladdin
 ```
+
+- or -
+
+you can download and run the precompiled binary on the release page
 ## Usage
 1. compile with `$ make`
 2. setup program with `$ ./Aladdin --setup` you will need your [oath key](https://twitchapps.com/tmi/)(`oauth:` is included in the key) and bot's nick name
