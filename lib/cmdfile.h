@@ -1,6 +1,12 @@
 int init();
+int banlist_init();
 int test_command(const char *test_cmd, char *outputMsg, int maxOutputLen);
+int banlist_test_command(const char *test_bw);
 int finish();
+int banlist_finish();
 int remove_command(char* remove_cmd);
+int banlist_remove_command(char* remove_cmd);
 void list_bot_commands();
+void list_ban_list();
 int add_command(char* add_cmd, char* add_msg);
+int banlist_add_command(char* banword);

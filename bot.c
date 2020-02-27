@@ -67,6 +67,8 @@ int main(int argc, char* argv[]){
     printf("if you join a channel you must supply the channel name you want to join\n");
     exit(0);
   }
+
+  //dealing with data files
   
   if (parseInfo()==-1){
     printf("run with --setup to add twitch auth\n");
@@ -76,6 +78,12 @@ int main(int argc, char* argv[]){
   if(init()==-1){
     printf("Warning: couldn't load commands\n");
   }
+  
+  if(banlist_init()==-1){
+    printf("Warning: couldn't load banlist\n");
+  }
+
+ 
 
   //signal handler
 
@@ -144,18 +152,18 @@ int main(int argc, char* argv[]){
 //analyses the user input (streamer side, not input from twitch channel)
 int analyseInput(char* strinput){
   sscanf(strinput, "%[^\n]", strinput);
-  char* strinput2 = strdup(strinput);
-  char* token = strtok(strinput, " ");
+  char* strinput_raw = strdup(strinput);
+  char* token = strtok(strinput_raw, " ");
   
   if(strcmp(token, "say")==0){
 
-    if(strlen(strinput2) < 5){
+    if(strlen(strinput) < 5){
       printf("usage: say <message>\n");
       return 0;
     }
     char* commandBody;
 
-    commandBody = strchr(strinput2,' ');
+    commandBody = strchr(strinput,' ');
     commandBody++;
     if(twlibc_msgchannel(twitchsock, currentChannel, commandBody)==-1){
       perror("could't send message");
@@ -167,10 +175,13 @@ int analyseInput(char* strinput){
   }else if(strcmp(token, "ls")==0){
     list_bot_commands(textWin);
     return 0;
+  }else if(strcmp(token, "ld")==0){
+    list_ban_list(textWin);
+    return 0;
   }else if(strncmp(token, "rmcmd", 5)==0){
-    if(strlen(strinput2)<=6){ //checks for arguments
+    if(strlen(strinput)<=6){ //checks for arguments
       char buffer[1024];
-      sprintf(buffer, "rmcmd <command>   %s\n", strinput2);
+      sprintf(buffer, "rmcmd <command>   %s\n", strinput);
       printToScreen(buffer, textWin);
       return 0;
     }
@@ -186,9 +197,20 @@ int analyseInput(char* strinput){
     sprintf(printBUffer,"removed command '%s'", commandName);
     printToScreen(printBUffer, textWin);
     return 0;
+    
+  }else if(strcmp(token, "rmbw")==0){
+    if(strlen(strinput) <= 5){
+      printToScreen("rmbw <command>", textWin);
+      return 0;
+    }
+    char* body = strchr(strinput, ' ');
+    body++;
+    banlist_remove_command(body);
+    printToScreen("ban word removed", textWin);
+    return 0;
   }else if(strcmp(token, "addcmd")==0){
 
-    if(strlen(strinput2)<=7){ //checks for arguments
+    if(strlen(strinput)<=7){ //checks for arguments
       printToScreen("addcmd <command> <message>", textWin);
       return 0;
     }
@@ -203,9 +225,7 @@ int analyseInput(char* strinput){
       return 0;
     }
 
-    
-
-    char* body = strchr(strinput2, ' ');
+    char* body = strchr(strinput, ' ');
     body++;
     body = strchr(body, ' ');
     body++; //all of this just gets the pointer to string after the first two spaces
@@ -219,11 +239,28 @@ int analyseInput(char* strinput){
     sprintf(namebuff, "added command %s", commandName);
     printToScreen(namebuff, textWin);
     return 0;
+  }else if(strcmp(token, "addbw")==0){
+    if(strlen(strinput) <= 6){
+      printToScreen("addbw <ban word>", textWin);
+      return 0;
+    }
+    char* body = strchr(strinput, ' ');
+    body++;
+    
+    if(banlist_test_command(body) == 1){
+      printToScreen("This banword already exists", textWin);
+      return 0;
+    }
+    
+    banlist_add_command(body);
+    printToScreen("ban word added", textWin);
+    return 0;
   }else if(strcmp(token, "join")==0){
     char* newChannelName = strtok(NULL, " ");
     char newChannel[1+strlen(newChannelName)];
     char returnBuff[500];
     char payload[50];
+
     sprintf(newChannel, "#%s", newChannelName);
     twlibc_leavechannel(twitchsock, currentChannel, returnBuff, 200);
     strcpy(currentChannel, newChannel);
@@ -234,10 +271,11 @@ int analyseInput(char* strinput){
     sleep(1);
     sprintf(payload,"%s is here! HeyGuys", nick);
     twlibc_msgchannel(twitchsock, currentChannel, payload);
+
     return 0;
   }else if(strcmp(token, "whisper")==0 || strcmp(token, "w")==0){
     char* user = strtok(NULL, " ");
-    char* message = strchr(strinput2, ' ');
+    char* message = strchr(strinput, ' ');
     message = strchr(message++, ' ');
     if(user==NULL || strtok(NULL, " ")==NULL){
       printf("usage: whisper|w <user> <message>\n");
@@ -268,13 +306,12 @@ void* readerTHEThread(void* context){
       }
     }else {
       //sprintf(buff, "[^\r\n]", buff);
+      char* buff_raw = strdup(buff);
       buff[strlen(buff)-2] = 0;
       for (char* token = strtok(buff, "\r\n"); token != NULL; token = strtok(NULL, "\r\n")){
 	printToScreen(token, textWin);
       }
       sleep(0.5);
-      //printf("[%s]> ", currentChannel);
-      fflush(stdout);
       
       char* command = returnCommand(buff);
       if(strcmp(command, "!credits")==0){ 
@@ -297,6 +334,24 @@ void* readerTHEThread(void* context){
 	  perror("coulnd't send message");
 	  return NULL;
 	}
+      }else {
+	char* buff_really_raw = strdup(buff_raw);
+	buff_raw++;
+	char* message = strchr(buff_raw, ':');
+	message++;
+	sscanf(message, "%[^\r\n]", message);
+	for (char* token = strtok(message, " "); token != NULL; token = strtok(NULL, " ")){
+	  if(banlist_test_command(token) == 1){
+	    char* payload = (char *)malloc(1024);
+	    sprintf(payload, "/timeout %s 60", commandSender(buff_really_raw));
+	    if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
+	      perror("coulnd't send message");
+	      return NULL;
+	    }
+	    free(payload);
+	  }
+	}
+	
       }
       free(command);
     }
@@ -360,6 +415,7 @@ void closeHandler(int signal){
 void close_cycle(){
   endwin();
   finish();
+  banlist_finish();
   pthread_kill(connData->writerThread, SIGTERM);
   pthread_kill(connData->readerThread, SIGTERM);
 }
