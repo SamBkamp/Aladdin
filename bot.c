@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netdb.h> //hostent
@@ -29,6 +28,8 @@ void* readerTHEThread(void* context);
 void* writerTHEThread(void* context);
 int writeToFile(char* command, char* body);
 int setupSocket();
+void close_cycle();
+void closeHandler(int signal);
 void printToScreen(char* message, WINDOW* window);
 void printFormatted(char* message, WINDOW* window);
 int windowHeight, windowWidth;
@@ -76,6 +77,10 @@ int main(int argc, char* argv[]){
     printf("Warning: couldn't load commands\n");
   }
 
+  //signal handler
+
+  signal(SIGINT, closeHandler);
+  
   //set up ncurses
   
   mainwin = initscr();
@@ -90,7 +95,7 @@ int main(int argc, char* argv[]){
   wrefresh(inputWin);
   
   twitchsock = twlibc_init(); //sets up address
-  
+
   char buff[500];
   if(twlibc_setupauth(twitchsock, password, nick, buff, sizeof(buff))==-1){
     perror("fauled to authenticate");
@@ -158,9 +163,7 @@ int analyseInput(char* strinput){
     }
     return 0;
   }else if (strcmp(token, "quit")==0){
-    finish();
-    pthread_kill(connData->writerThread, SIGTERM);
-    pthread_kill(connData->readerThread, SIGTERM);
+    close_cycle();
   }else if(strcmp(token, "ls")==0){
     list_bot_commands(textWin);
     return 0;
@@ -348,4 +351,15 @@ void printFormatted(char* message, WINDOW* window){ //helper function that deals
   for (char* tokky = strtok(message, "\r\n"); tokky != NULL; tokky = strtok(NULL, "\r\n")){
     printToScreen(tokky, window);    
   }
+}
+
+void closeHandler(int signal){
+  close_cycle();
+}
+
+void close_cycle(){
+  endwin();
+  finish();
+  pthread_kill(connData->writerThread, SIGTERM);
+  pthread_kill(connData->readerThread, SIGTERM);
 }
