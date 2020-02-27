@@ -306,13 +306,12 @@ void* readerTHEThread(void* context){
       }
     }else {
       //sprintf(buff, "[^\r\n]", buff);
+      char* buff_raw = strdup(buff);
       buff[strlen(buff)-2] = 0;
       for (char* token = strtok(buff, "\r\n"); token != NULL; token = strtok(NULL, "\r\n")){
 	printToScreen(token, textWin);
       }
       sleep(0.5);
-      //printf("[%s]> ", currentChannel);
-      fflush(stdout);
       
       char* command = returnCommand(buff);
       if(strcmp(command, "!credits")==0){ 
@@ -335,6 +334,24 @@ void* readerTHEThread(void* context){
 	  perror("coulnd't send message");
 	  return NULL;
 	}
+      }else {
+	char* buff_really_raw = strdup(buff_raw);
+	buff_raw++;
+	char* message = strchr(buff_raw, ':');
+	message++;
+	sscanf(message, "%[^\r\n]", message);
+	for (char* token = strtok(message, " "); token != NULL; token = strtok(NULL, " ")){
+	  if(banlist_test_command(token) == 1){
+	    char* payload = (char *)malloc(1024);
+	    sprintf(payload, "/timeout %s 60", commandSender(buff_really_raw));
+	    if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
+	      perror("coulnd't send message");
+	      return NULL;
+	    }
+	    free(payload);
+	  }
+	}
+	
       }
       free(command);
     }
