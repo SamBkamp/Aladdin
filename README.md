@@ -1,5 +1,6 @@
 [![Bkamp_](https://img.shields.io/badge/twitch.tv-bkamp_-purple?logo=twitch&style=for-the-badge)](https://www.twitch.tv/bkamp_)
 [![Bkamp_](https://img.shields.io/github/issues-raw/SamBkamp/Aladdin/good%20first%20issue?style=flat-square)](https://github.com/SamBkamp/Aladdin/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+[![Bkamp_](https://github.com/sambkamp/Aladdin/workflows/C%20CI/badge.svg)](https://github.com/SamBkamp/Aladdin/actions)
 
 # **Aladdin**
 
