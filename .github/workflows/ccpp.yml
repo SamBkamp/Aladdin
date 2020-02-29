@@ -9,5 +9,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
-    - name: make
-      run: ./make
+    - name: install dependencies
+      run: sudo apt-get update && sudo apt-get install libncurses5-dev libncursesw5-dev
+    - name: build Aladdin	
+      run: make
