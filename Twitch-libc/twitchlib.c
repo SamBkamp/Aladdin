@@ -36,7 +36,7 @@ int twlibc_init(){
   bzero(&twitchaddr, sizeof(twitchaddr));
   twitchaddr.sin_family = AF_INET;
   twitchaddr.sin_addr.s_addr = *(long *)host->h_addr_list[0];
-  twitchaddr.sin_port = htons(6667);
+  twitchaddr.sin_port = htons(6697);
 
   if(connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0)
     return -1;
