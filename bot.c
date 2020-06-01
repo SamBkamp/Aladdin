@@ -437,12 +437,13 @@ void close_cycle(){
   pthread_kill(connData->readerThread, SIGTERM);
 }
 
-SSL_CTX* InitCTX(void){
+SSL_CTX* InitCTX(void){ //create client-method instance & context
   SSL_CTX* ctx;
-
+  const SSL_METHOD* method;
+  
   OpenSSL_add_all_algorithms();
   SSL_load_error_strings();
-  const SSL_METHOD* method = TLS_client_method();
+  method = TLS_client_method();
   ctx = SSL_CTX_new(method);
 
   if(ctx == NULL){
@@ -471,3 +472,4 @@ void ShowCerts(SSL* ssl){
     printf("Info: No client certificates configured.\n"); 
   }
 }
+

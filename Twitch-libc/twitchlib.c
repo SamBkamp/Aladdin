@@ -21,8 +21,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
-int twlibc_init(){
+
+int usingSSL;
+SSL* ssl_connection;
+
+int twlibc_init(SSL* ssl){
   struct sockaddr_in twitchaddr;
   int twitchsock = socket(AF_INET, SOCK_STREAM, 0);
   if (twitchsock==-1)
@@ -40,14 +46,28 @@ int twlibc_init(){
 
   if(connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0)
     return -1;
+  
+  if(ssl != NULL){
+    ssl_connection = ssl;
+    usingSSL = 1;
+  }else {
+    usingSSL = 0; 
+  }
+  
   return twitchsock;
 }
 
 int twlibc_msgchannel(int sockfd, const char* channel, const char* message){
   char payload[12+strlen(channel)+strlen(message)];
   sprintf(payload, "PRIVMSG %s :%s\r\n", channel, message);
-  if(write(sockfd, payload, strlen(payload))==-1){
-    return -1;
+  if(usingSSL == 0){
+    if(write(sockfd, payload, strlen(payload))==-1){
+      return -1;
+    } 
+  }else{
+    if(SSL_write(ssl_connection, payload, strlen(payload))==-1){
+      return -1;
+    }
   }
   return 0;
 }
@@ -55,12 +75,25 @@ int twlibc_msgchannel(int sockfd, const char* channel, const char* message){
 int twlibc_joinchannel(int sockfd, const char* channel, char* output, int length){
   char payload[7+strlen(channel)];
   sprintf(payload, "JOIN %s\r\n", channel);
-  if(write(sockfd, payload, strlen(payload))==-1){
-    return -1;
-  }
-  if(output != NULL){
-    if(read(sockfd, output, length)==-1){
+  if(usingSSL == 0){
+    //not using SSL
+    if(write(sockfd, payload, strlen(payload))==-1){
       return -1;
+    }    
+    if(output != NULL){
+      if(read(sockfd, output, length)==-1){
+	return -1;
+      }
+    }
+  }else{
+    //using SSL
+    if(SSL_write(ssl_connection, payload, strlen(payload))==-1){
+      return -1;
+    }
+    if(output != NULL){
+      if(SSL_read(ssl_connection, output, length)==-1){
+	return -1;
+      }
     }
   }
   return 0;
