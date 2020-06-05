@@ -96,9 +96,9 @@ int main(int argc, char* argv[]){
 
   //sets up networking stuff
   SSL_library_init();
-  twitchsock = twlibc_init(); //sets up address
   SSL_CTX* ctx = InitCTX();
   SSL* ssl = SSL_new(ctx);
+  twitchsock = twlibc_init(ssl); //sets up address
   SSL_set_fd(ssl, twitchsock);
   if(SSL_connect(ssl) < 1){
     printf("FATAL: Failed to connect to SSL socket\n");
@@ -122,7 +122,8 @@ int main(int argc, char* argv[]){
   
   char buff[500];
   if(twlibc_setupauth(twitchsock, password, nick, buff, sizeof(buff))==-1){
-    perror("fauled to authenticate");
+    perror("failed to authenticate");
+    close_cycle();
     return -1;
   }
   printFormatted(buff, textWin);
@@ -447,6 +448,7 @@ SSL_CTX* InitCTX(void){ //create client-method instance & context
   ctx = SSL_CTX_new(method);
 
   if(ctx == NULL){
+    printf("%s", "CTX IS NULL - PANIC");
     ERR_print_errors_fp(stderr);
     abort();
   }

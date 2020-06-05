@@ -31,28 +31,32 @@ SSL* ssl_connection;
 int twlibc_init(SSL* ssl){
   struct sockaddr_in twitchaddr;
   int twitchsock = socket(AF_INET, SOCK_STREAM, 0);
+  int PORT;
   if (twitchsock==-1)
     return -1;
   
   struct hostent* host = gethostbyname("irc.chat.twitch.tv");
   if(host == NULL)
     return -1;
+
+
+  if(ssl != NULL){
+    ssl_connection = ssl;
+    usingSSL = 1;
+    PORT = 6697;
+  }else {
+    usingSSL = 0;
+    PORT = 6667;
+  }
   
   //setup address
   bzero(&twitchaddr, sizeof(twitchaddr));
   twitchaddr.sin_family = AF_INET;
   twitchaddr.sin_addr.s_addr = *(long *)host->h_addr_list[0];
-  twitchaddr.sin_port = htons(6697);
+  twitchaddr.sin_port = htons(PORT);
 
   if(connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0)
     return -1;
-  
-  if(ssl != NULL){
-    ssl_connection = ssl;
-    usingSSL = 1;
-  }else {
-    usingSSL = 0; 
-  }
   
   return twitchsock;
 }
@@ -136,7 +140,7 @@ int twlibc_setupauth(int sockfd, const char* oauth, const char* nick, char* outp
   }
   
   if(output!=NULL){
-    if(read(sockfd, output, length)==-1){
+    if(read(sockfd, output, length)==-1){ //here is the error
       return -1;
     }
   }
