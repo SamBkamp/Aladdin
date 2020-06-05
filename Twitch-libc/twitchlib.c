@@ -65,13 +65,9 @@ int twlibc_msgchannel(int sockfd, const char* channel, const char* message){
   char payload[12+strlen(channel)+strlen(message)];
   sprintf(payload, "PRIVMSG %s :%s\r\n", channel, message);
   if(usingSSL == 0){
-    if(write(sockfd, payload, strlen(payload))==-1){
-      return -1;
-    } 
+    return write(sockfd, payload, strlen(payload));
   }else{
-    if(SSL_write(ssl_connection, payload, strlen(payload))==-1){
-      return -1;
-    }
+    return SSL_write(ssl_connection, payload, strlen(payload));
   }
   return 0;
 }
@@ -135,13 +131,17 @@ int twlibc_setupauth(int sockfd, const char* oauth, const char* nick, char* outp
   char payload[14 + strlen(oauth) + strlen(nick)];
   sprintf(payload, "PASS %s\r\nNICK %s\r\n", oauth, nick);
 
-  if(write(sockfd, payload, strlen(payload))==-1){
-    return -1;
+  if(usingSSL == 1){
+    return SSL_write(ssl_connection, payload, strlen(payload)); 
+  }else {
+    return write(sockfd, payload, strlen(payload)); 
   }
-  
+   
   if(output!=NULL){
-    if(read(sockfd, output, length)==-1){ //here is the error
-      return -1;
+    if(usingSSL == 0){
+      return read(sockfd, output, length);
+    }else {
+      return SSL_read(ssl_connection, output, length);
     }
   }
   return 0;
