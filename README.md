@@ -4,7 +4,7 @@
 
 # **Aladdin**
 
-a CLI twitch bot written in c. This bot is a way for you to interface with your twitch chat and also have chat commands and ban lists, all packed neatly into a single executable.
+a CLI twitch bot written in c. This bot is a way for you to interface with your twitch chat and also have chat commands and ban lists, all packed neatly into a single executable. The bot also encrypts data with SSL when talking to twitch. That means you can use this bot on IRL streams on sketchy public WIFI if you want...
 
 ## Features
 This bot has two main features; Chat commands and ban words. The chat commands are a way for you as a streamer to program the bot to respond to twitch chat with automated messages, see the Commands section for more. The other feature is the ban words, this is a way for you to create a list that, if anyone says these words in your twitch chat, the bot will automatically time them out for 60 seconds. See more at the Commands section.  
