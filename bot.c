@@ -41,6 +41,7 @@ int windowHeight, windowWidth;
 WINDOW* mainwin;
 WINDOW* textWin;
 WINDOW* inputWin;
+SSL* ssl;
 int lineIterator = -1;
 
 #include "lib/cmdfile.h" //its ugly, I know but please bear with me
@@ -358,11 +359,11 @@ void* readerTHEThread(void* context){
 	  return NULL;
 	}
       }else {
-	char* buff_really_raw = strdup(buff_raw);
+	char* buff_really_raw = strdup(buff_raw); //the raw payload that comes in
 	buff_raw++;
 	char* message = strchr(buff_raw, ':');
 	message++;
-	sscanf(message, "%[^\r\n]", message);
+ 	sscanf(message, "%[^\r\n]", message);
 	for (char* token = strtok(message, " "); token != NULL; token = strtok(NULL, " ")){
 	  if(banlist_test_command(token) == 1){
 	    char* payload = (char *)malloc(1024);
