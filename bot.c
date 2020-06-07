@@ -312,7 +312,7 @@ void* readerTHEThread(void* context){
   char buff[500];
   char outputmsg[1024];
   
-  for (;;){
+  for (;;){//this does not work for SSL!
     bzero(buff, sizeof(buff));
     read(twitchsock, buff, sizeof(buff));    
     //catches ping from twitch servers 
@@ -330,6 +330,10 @@ void* readerTHEThread(void* context){
 	printToScreen(token, textWin);
       }
       sleep(0.5);
+
+      if(strlen(buff) < 5){
+        continue;
+      }
       
       char* command = returnCommand(buff);
       if(strcmp(command, "!credits")==0){ 
