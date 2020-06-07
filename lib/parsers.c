@@ -9,12 +9,12 @@ char* commandSender(char* strinput){
   return tok;
 }
 
-//analyses twitch chat for commands
-char* returnCommand(char* strinput){
-  sscanf(strinput, "%[^\r\n]", strinput);
+//helper function that analyses twitch chat for commands
+char* returnCommand(char* strinput){//todo allow buffer to be passsed so weird memcpy doesnt have to happen
+  sscanf(strinput, "%[^\r\n]", strinput); //strips line off unprintable characters
 
   char* token = strtok(strinput, ":");
-  token = strtok(NULL, ":"); //parses for contents of packet
+  token = strtok(NULL, ":"); //skips over username stuff to get to contents of message 
   char* command = strtok(token, " "); //parses for first word of message
   char finalCommand[strlen(command-2)];
   char* retval = (char *)malloc(strlen(command));
