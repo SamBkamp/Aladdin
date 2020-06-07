@@ -331,11 +331,12 @@ void* readerTHEThread(void* context){
       }
       sleep(0.5);
 
-      if(strlen(buff) < 5){
+      if(strstr(buff, "PRIVMSG") == NULL){ //Make sure that the packet thats being analysed is actually a chat rather than a meta message  
         continue;
       }
       
       char* command = returnCommand(buff);
+      //analysing chat commands starts here
       if(strcmp(command, "!credits")==0){ 
 	//hard coded command
 	if(twlibc_msgchannel(twitchsock,
