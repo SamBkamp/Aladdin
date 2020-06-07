@@ -121,7 +121,7 @@ int main(int argc, char* argv[]){
   wrefresh(inputWin);
   
   char buff[500];
-  if(twlibc_setupauth(twitchsock, password, nick, buff, sizeof(buff))==-1){
+  if(twlibc_setupauth(NULL, password, nick, buff, sizeof(buff))==-1){
     perror("failed to authenticate");
     close_cycle();
     return -1;
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]){
   
   bzero(buff, sizeof(buff));
   
-  if(twlibc_joinchannel(twitchsock, channelName, buff, sizeof(buff))==-1){
+  if(twlibc_joinchannel(NULL, channelName, buff, sizeof(buff))==-1){
     perror("failed to write to socket");
     return -1;
   }
