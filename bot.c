@@ -97,7 +97,7 @@ int main(int argc, char* argv[]){
   //sets up networking stuff
   SSL_library_init();
   SSL_CTX* ctx = InitCTX();
-  SSL* ssl = SSL_new(ctx);
+  ssl = SSL_new(ctx);
   twitchsock = twlibc_init(ssl); //sets up address
   SSL_set_fd(ssl, twitchsock);
   if(SSL_connect(ssl) < 1){
