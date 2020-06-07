@@ -6,8 +6,6 @@
 
 a CLI twitch bot written in c. This bot is a way for you to interface with your twitch chat and also have chat commands and ban lists, all packed neatly into a single executable.
 
-**Warning: this bot is not yet SSL encrypted, This means that your oauth key will be sent in plain text over the network. So, please don't use this bot on public networks until SSL is implemented.**
-
 ## Features
 This bot has two main features; Chat commands and ban words. The chat commands are a way for you as a streamer to program the bot to respond to twitch chat with automated messages, see the Commands section for more. The other feature is the ban words, this is a way for you to create a list that, if anyone says these words in your twitch chat, the bot will automatically time them out for 60 seconds. See more at the Commands section.  
 
