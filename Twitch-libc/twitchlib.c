@@ -21,33 +21,53 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
-int twlibc_init(){
+
+int usingSSL;
+SSL* ssl_connection;
+
+int twlibc_init(SSL* ssl){
   struct sockaddr_in twitchaddr;
   int twitchsock = socket(AF_INET, SOCK_STREAM, 0);
+  int PORT;
   if (twitchsock==-1)
     return -1;
   
   struct hostent* host = gethostbyname("irc.chat.twitch.tv");
   if(host == NULL)
     return -1;
+
+
+  if(ssl != NULL){
+    ssl_connection = ssl;
+    usingSSL = 1;
+    PORT = 6697;
+  }else {
+    usingSSL = 0;
+    PORT = 6667;
+  }
   
   //setup address
   bzero(&twitchaddr, sizeof(twitchaddr));
   twitchaddr.sin_family = AF_INET;
   twitchaddr.sin_addr.s_addr = *(long *)host->h_addr_list[0];
-  twitchaddr.sin_port = htons(6667);
+  twitchaddr.sin_port = htons(PORT);
 
   if(connect(twitchsock, (struct sockaddr*)&twitchaddr, sizeof(twitchaddr)) != 0)
     return -1;
+  
   return twitchsock;
 }
 
 int twlibc_msgchannel(int sockfd, const char* channel, const char* message){
   char payload[12+strlen(channel)+strlen(message)];
   sprintf(payload, "PRIVMSG %s :%s\r\n", channel, message);
-  if(write(sockfd, payload, strlen(payload))==-1){
-    return -1;
+  if(usingSSL == 0){
+    return write(sockfd, payload, strlen(payload));
+  }else{
+    return SSL_write(ssl_connection, payload, strlen(payload));
   }
   return 0;
 }
@@ -55,12 +75,25 @@ int twlibc_msgchannel(int sockfd, const char* channel, const char* message){
 int twlibc_joinchannel(int sockfd, const char* channel, char* output, int length){
   char payload[7+strlen(channel)];
   sprintf(payload, "JOIN %s\r\n", channel);
-  if(write(sockfd, payload, strlen(payload))==-1){
-    return -1;
-  }
-  if(output != NULL){
-    if(read(sockfd, output, length)==-1){
+  if(usingSSL == 0){
+    //not using SSL
+    if(write(sockfd, payload, strlen(payload))==-1){
       return -1;
+    }    
+    if(output != NULL){
+      if(read(sockfd, output, length)==-1){
+	return -1;
+      }
+    }
+  }else{
+    //using SSL
+    if(SSL_write(ssl_connection, payload, strlen(payload))==-1){
+      return -1;
+    }
+    if(output != NULL){
+      if(SSL_read(ssl_connection, output, length)==-1){
+	return -1;
+      }
     }
   }
   return 0;
@@ -98,13 +131,17 @@ int twlibc_setupauth(int sockfd, const char* oauth, const char* nick, char* outp
   char payload[14 + strlen(oauth) + strlen(nick)];
   sprintf(payload, "PASS %s\r\nNICK %s\r\n", oauth, nick);
 
-  if(write(sockfd, payload, strlen(payload))==-1){
-    return -1;
+  if(usingSSL == 1){
+    return SSL_write(ssl_connection, payload, strlen(payload)); 
+  }else {
+    return write(sockfd, payload, strlen(payload)); 
   }
-  
+   
   if(output!=NULL){
-    if(read(sockfd, output, length)==-1){
-      return -1;
+    if(usingSSL == 0){
+      return read(sockfd, output, length);
+    }else {
+      return SSL_read(ssl_connection, output, length);
     }
   }
   return 0;

@@ -11,11 +11,14 @@
 #include "lib/parsers.c"
 #include "Twitch-libc/twitchlib.h"
 #include <ncurses.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 struct connectionData{
   int sockfd;
   pthread_t writerThread;
   pthread_t readerThread;
+  SSL* ssl;
 };
 
 struct sockaddr_in twitchaddr;
@@ -32,10 +35,13 @@ void close_cycle();
 void closeHandler(int signal);
 void printToScreen(char* message, WINDOW* window);
 void printFormatted(char* message, WINDOW* window);
+SSL_CTX* InitCTX(void);
+void ShowCerts(SSL* ssl);
 int windowHeight, windowWidth;
 WINDOW* mainwin;
 WINDOW* textWin;
 WINDOW* inputWin;
+SSL* ssl;
 int lineIterator = -1;
 
 #include "lib/cmdfile.h" //its ugly, I know but please bear with me
@@ -73,8 +79,8 @@ int main(int argc, char* argv[]){
   if (parseInfo()==-1){
     printf("run with --setup to add twitch auth\n");
     return -1;
-  }
-  
+  } 
+
   if(init()==-1){
     printf("Warning: couldn't load commands\n");
   }
@@ -88,6 +94,19 @@ int main(int argc, char* argv[]){
   //signal handler
 
   signal(SIGINT, closeHandler);
+
+  //sets up networking stuff
+  SSL_library_init();
+  SSL_CTX* ctx = InitCTX();
+  ssl = SSL_new(ctx);
+  twitchsock = twlibc_init(ssl); //sets up address
+  SSL_set_fd(ssl, twitchsock);
+  if(SSL_connect(ssl) < 1){
+    printf("FATAL: Failed to connect to SSL socket\n");
+    ERR_print_errors_fp(stderr);
+    return 0;
+  }
+  ShowCerts(ssl);
   
   //set up ncurses
   
@@ -102,11 +121,10 @@ int main(int argc, char* argv[]){
   box(inputWin, '|', '-');
   wrefresh(inputWin);
   
-  twitchsock = twlibc_init(); //sets up address
-
   char buff[500];
-  if(twlibc_setupauth(twitchsock, password, nick, buff, sizeof(buff))==-1){
-    perror("fauled to authenticate");
+  if(twlibc_setupauth(NULL, password, nick, buff, sizeof(buff))==-1){
+    perror("failed to authenticate");
+    close_cycle();
     return -1;
   }
   printFormatted(buff, textWin);
@@ -118,7 +136,7 @@ int main(int argc, char* argv[]){
   
   bzero(buff, sizeof(buff));
   
-  if(twlibc_joinchannel(twitchsock, channelName, buff, sizeof(buff))==-1){
+  if(twlibc_joinchannel(NULL, channelName, buff, sizeof(buff))==-1){
     perror("failed to write to socket");
     return -1;
   }
@@ -135,8 +153,9 @@ int main(int argc, char* argv[]){
   
   conData.writerThread = writerThread;
   conData.readerThread = readerThread;
+  conData.ssl = ssl;
   
-  connData = &conData;
+ connData = &conData;
   
   pthread_join(writerThread, NULL);
   sleep(1);
@@ -296,7 +315,7 @@ void* readerTHEThread(void* context){
   
   for (;;){
     bzero(buff, sizeof(buff));
-    read(twitchsock, buff, sizeof(buff));    
+    SSL_read(ssl, buff, sizeof(buff));    
     //catches ping from twitch servers 
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
 
@@ -312,8 +331,13 @@ void* readerTHEThread(void* context){
 	printToScreen(token, textWin);
       }
       sleep(0.5);
+
+      if(strstr(buff, "PRIVMSG") == NULL){ //Make sure that the packet thats being analysed is actually a chat rather than a meta message  
+        continue;
+      }
       
       char* command = returnCommand(buff);
+      //analysing chat commands starts here
       if(strcmp(command, "!credits")==0){ 
 	//hard coded command
 	if(twlibc_msgchannel(twitchsock,
@@ -335,11 +359,11 @@ void* readerTHEThread(void* context){
 	  return NULL;
 	}
       }else {
-	char* buff_really_raw = strdup(buff_raw);
+	char* buff_really_raw = strdup(buff_raw); //the raw payload that comes in
 	buff_raw++;
 	char* message = strchr(buff_raw, ':');
 	message++;
-	sscanf(message, "%[^\r\n]", message);
+ 	sscanf(message, "%[^\r\n]", message);
 	for (char* token = strtok(message, " "); token != NULL; token = strtok(NULL, " ")){
 	  if(banlist_test_command(token) == 1){
 	    char* payload = (char *)malloc(1024);
@@ -365,7 +389,7 @@ void* writerTHEThread(void* context){
   char payload[50];
   
   sprintf(payload,"%s is here! HeyGuys", nick);
-
+  
   if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
     perror("coulnd't send message");
     return NULL;
@@ -419,3 +443,41 @@ void close_cycle(){
   pthread_kill(connData->writerThread, SIGTERM);
   pthread_kill(connData->readerThread, SIGTERM);
 }
+
+SSL_CTX* InitCTX(void){ //create client-method instance & context
+  SSL_CTX* ctx;
+  const SSL_METHOD* method;
+  
+  OpenSSL_add_all_algorithms();
+  SSL_load_error_strings();
+  method = TLS_client_method();
+  ctx = SSL_CTX_new(method);
+
+  if(ctx == NULL){
+    printf("%s", "CTX IS NULL - PANIC");
+    ERR_print_errors_fp(stderr);
+    abort();
+  }
+  return ctx;
+}
+
+void ShowCerts(SSL* ssl){
+  X509* cert;
+  char* line;
+
+  cert = SSL_get_peer_certificate(ssl);
+
+  if (cert != NULL){
+    printf("Server certificates:\n");
+    line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+    printf("Subject: %s\n", line);
+    free(line);       /* free the malloc'ed string */
+    line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+    printf("Issuer: %s\n", line);
+    free(line);       /* free the malloc'ed string */
+    X509_free(cert);	
+  }else {
+    printf("Info: No client certificates configured.\n"); 
+  }
+}
+
