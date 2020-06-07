@@ -312,9 +312,9 @@ void* readerTHEThread(void* context){
   char buff[500];
   char outputmsg[1024];
   
-  for (;;){//this does not work for SSL!
+  for (;;){
     bzero(buff, sizeof(buff));
-    read(twitchsock, buff, sizeof(buff));    
+    SSL_read(ssl, buff, sizeof(buff));    
     //catches ping from twitch servers 
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
 
