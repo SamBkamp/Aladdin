@@ -121,8 +121,12 @@ int twlibc_sendrawpacket(int sockfd, char* payload){
     strcat(payload, "\r\n");
   }
   */
-  if(write(sockfd, payload, strlen(payload))==-1){
-    return -1;
+  if(usingSSL == 1){
+    return SSL_write(ssl_connection, payload, strlen(payload));
+  }else {
+    if(write(sockfd, payload, strlen(payload))==-1){
+      return -1;
+    }
   }
   return 1;
 }
