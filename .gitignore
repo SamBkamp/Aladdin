@@ -3,3 +3,6 @@ Aladdin
 commands.csv
 userinfo.txt
 banlist.csv
+Twitch-libc/examples/
+Twitch-libc/examples/*
+debugging/.gdb_history	
