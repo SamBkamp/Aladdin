@@ -21,9 +21,8 @@ struct connectionData{
   SSL* ssl;
 };
 
-struct sockaddr_in twitchaddr;
 struct connectionData *connData;
-int twitchsock;
+twitch_connection* twlibc;
 char currentChannel[100];
 
 int  analyseInput(char* strinput);
@@ -35,13 +34,10 @@ void close_cycle();
 void closeHandler(int signal);
 void printToScreen(char* message, WINDOW* window);
 void printFormatted(char* message, WINDOW* window);
-SSL_CTX* InitCTX(void);
-void ShowCerts(SSL* ssl);
 int windowHeight, windowWidth;
 WINDOW* mainwin;
 WINDOW* textWin;
 WINDOW* inputWin;
-SSL* ssl;
 int lineIterator = -1;
 
 #include "lib/cmdfile.h" //its ugly, I know but please bear with me
@@ -96,18 +92,7 @@ int main(int argc, char* argv[]){
   signal(SIGINT, closeHandler);
 
   //sets up networking stuff
-  SSL_library_init();
-  SSL_CTX* ctx = InitCTX();
-  ssl = SSL_new(ctx);
-  twitchsock = twlibc_init(ssl); //sets up address
-  SSL_set_fd(ssl, twitchsock);
-  if(SSL_connect(ssl) < 1){
-    printf("FATAL: Failed to connect to SSL socket\n");
-    ERR_print_errors_fp(stderr);
-    return 0;
-  }
-  ShowCerts(ssl);
-  
+  twlibc = twlibc_init(1);  
   //set up ncurses
   
   mainwin = initscr();
@@ -122,7 +107,7 @@ int main(int argc, char* argv[]){
   wrefresh(inputWin);
   
   char buff[500];
-  if(twlibc_setupauth(NULL, password, nick, buff, sizeof(buff))==-1){
+  if(twlibc_setupauth(twlibc, password, nick, buff, sizeof(buff))==-1){
     perror("failed to authenticate");
     close_cycle();
     return -1;
@@ -136,7 +121,7 @@ int main(int argc, char* argv[]){
   
   bzero(buff, sizeof(buff));
   
-  if(twlibc_joinchannel(NULL, channelName, buff, sizeof(buff))==-1){
+  if(twlibc_joinchannel(twlibc, channelName, buff, sizeof(buff))==-1){
     perror("failed to write to socket");
     return -1;
   }
@@ -153,9 +138,9 @@ int main(int argc, char* argv[]){
   
   conData.writerThread = writerThread;
   conData.readerThread = readerThread;
-  conData.ssl = ssl;
+  conData.ssl = twlibc->ssl;
   
- connData = &conData;
+  connData = &conData;
   
   pthread_join(writerThread, NULL);
   sleep(1);
@@ -184,7 +169,7 @@ int analyseInput(char* strinput){
 
     commandBody = strchr(strinput,' ');
     commandBody++;
-    if(twlibc_msgchannel(twitchsock, currentChannel, commandBody)==-1){
+    if(twlibc_msgchannel(twlibc, currentChannel, commandBody)==-1){
       perror("could't send message");
       return -1;
     }
@@ -281,15 +266,15 @@ int analyseInput(char* strinput){
     char payload[50];
 
     sprintf(newChannel, "#%s", newChannelName);
-    twlibc_leavechannel(twitchsock, currentChannel, returnBuff, 200);
+    twlibc_leavechannel(twlibc, currentChannel, returnBuff, 200);
     strcpy(currentChannel, newChannel);
     printFormatted(returnBuff, textWin);
     bzero(returnBuff, sizeof(returnBuff));
-    twlibc_joinchannel(twitchsock, newChannel, returnBuff, 200);
+    twlibc_joinchannel(twlibc, newChannel, returnBuff, 200);
     printFormatted(returnBuff, textWin);
     sleep(1);
     sprintf(payload,"%s is here! HeyGuys", nick);
-    twlibc_msgchannel(twitchsock, currentChannel, payload);
+    twlibc_msgchannel(twlibc, currentChannel, payload);
 
     return 0;
   }else if(strcmp(token, "whisper")==0 || strcmp(token, "w")==0){
@@ -300,7 +285,7 @@ int analyseInput(char* strinput){
       printf("usage: whisper|w <user> <message>\n");
       return -1;
     }
-    if(twlibc_whisper(twitchsock, user, message, currentChannel)==-1){
+    if(twlibc_whisper(twlibc, user, message, currentChannel)==-1){
       perror("Coulnd't send whisper");
     }
     return 0;
@@ -315,12 +300,12 @@ void* readerTHEThread(void* context){
   
   for (;;){
     bzero(buff, sizeof(buff));
-    SSL_read(ssl, buff, sizeof(buff));    
+    SSL_read(twlibc->ssl, buff, sizeof(buff));    
     //catches ping from twitch servers 
     if(strcmp(buff, "PING :tmi.twitch.tv\r\n") == 0){
 
       char* payload = "PONG :tmi.twitch.tv\r\n";
-      if(twlibc_sendrawpacket(twitchsock, payload)==-1){
+      if(twlibc_sendrawpacket(twlibc, payload)==-1){
 	return NULL;
       }
     }else {
@@ -340,7 +325,7 @@ void* readerTHEThread(void* context){
       //analysing chat commands starts here
       if(strcmp(command, "!credits")==0){ 
 	//hard coded command
-	if(twlibc_msgchannel(twitchsock,
+	if(twlibc_msgchannel(twlibc,
 		      currentChannel,
 		      "This bot was written by SamBkamp at: https://github.com/SamBkamp/Aladdin\r\n")==-1){
 	  return NULL;
@@ -348,13 +333,13 @@ void* readerTHEThread(void* context){
       }else if(strcmp(command, "!vanish")==0){
 	char* payload = (char *)malloc(1024);
 	sprintf(payload, "/timeout %s 1", commandSender(buff));
-        if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
+        if(twlibc_msgchannel(twlibc, currentChannel, payload)==-1){
 	  perror("coulnd't send message");
 	  return NULL;
 	}
 	free(payload);
       }else if(test_command(command, outputmsg, 100)==1){ 
-        if(twlibc_msgchannel(twitchsock, currentChannel, outputmsg)==-1){
+        if(twlibc_msgchannel(twlibc, currentChannel, outputmsg)==-1){
 	  perror("coulnd't send message");
 	  return NULL;
 	}
@@ -368,7 +353,7 @@ void* readerTHEThread(void* context){
 	  if(banlist_test_command(token) == 1){
 	    char* payload = (char *)malloc(1024);
 	    sprintf(payload, "/timeout %s 60", commandSender(buff_really_raw));
-	    if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
+	    if(twlibc_msgchannel(twlibc, currentChannel, payload)==-1){
 	      perror("coulnd't send message");
 	      return NULL;
 	    }
@@ -390,7 +375,7 @@ void* writerTHEThread(void* context){
   
   sprintf(payload,"%s is here! HeyGuys", nick);
   
-  if(twlibc_msgchannel(twitchsock, currentChannel, payload)==-1){
+  if(twlibc_msgchannel(twlibc, currentChannel, payload)==-1){
     perror("coulnd't send message");
     return NULL;
   }
@@ -443,41 +428,3 @@ void close_cycle(){
   pthread_kill(connData->writerThread, SIGTERM);
   pthread_kill(connData->readerThread, SIGTERM);
 }
-
-SSL_CTX* InitCTX(void){ //create client-method instance & context
-  SSL_CTX* ctx;
-  const SSL_METHOD* method;
-  
-  OpenSSL_add_all_algorithms();
-  SSL_load_error_strings();
-  method = TLS_client_method();
-  ctx = SSL_CTX_new(method);
-
-  if(ctx == NULL){
-    printf("%s", "CTX IS NULL - PANIC");
-    ERR_print_errors_fp(stderr);
-    abort();
-  }
-  return ctx;
-}
-
-void ShowCerts(SSL* ssl){
-  X509* cert;
-  char* line;
-
-  cert = SSL_get_peer_certificate(ssl);
-
-  if (cert != NULL){
-    printf("Server certificates:\n");
-    line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-    printf("Subject: %s\n", line);
-    free(line);       /* free the malloc'ed string */
-    line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-    printf("Issuer: %s\n", line);
-    free(line);       /* free the malloc'ed string */
-    X509_free(cert);	
-  }else {
-    printf("Info: No client certificates configured.\n"); 
-  }
-}
-
